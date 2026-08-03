@@ -1134,6 +1134,29 @@
     }
   </style>
 
+
+  <style id="realtime-stable-final">
+    .settings{
+      justify-content:flex-start;
+    }
+
+    @media (min-width:681px) and (max-width:1024px){
+      .settings{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media (max-width:680px){
+      .settings{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .setting:first-child{
+        grid-column:auto;
+      }
+    }
+  </style>
+
 </head>
 <body>
   <main class="app">
@@ -1171,21 +1194,9 @@
           </select>
         </div>
 
-        <div class="setting">
-          <label class="switch">
-            <span>文末補助</span>
-            <input id="punctuationToggle" type="checkbox" checked>
-            <span class="switch-ui"></span>
-          </label>
-        </div>
+        
 
-        <div class="setting">
-          <label class="switch">
-            <span>自動改行</span>
-            <input id="autoBreakToggle" type="checkbox" checked>
-            <span class="switch-ui"></span>
-          </label>
-        </div>
+        
 
         <div class="setting">
           <label class="switch">
@@ -1250,8 +1261,6 @@
       const wakeButton = $("wakeButton");
       const themeButton = $("themeButton");
       const fontSizeSelect = $("fontSizeSelect");
-      const punctuationToggle = $("punctuationToggle");
-      const autoBreakToggle = $("autoBreakToggle");
       const autoScrollToggle = $("autoScrollToggle");
       const statusText = $("statusText");
       const statusDot = $("statusDot");
@@ -1264,17 +1273,13 @@
       let recognition = null;
       let shouldContinue = false;
       let restartTimer = null;
-      let autoBreakTimer = null;
-      let periodTimer = null;
       let lastFinalText = "";
       let lastFinalAt = 0;
-      let lastFinalEventAt = 0;
       let startTime = null;
       let clockTimer = null;
       let wakeLock = null;
       let microphoneStartTimer = null;
       let recognitionActive = false;
-      let restartAttempts = 0;
 
       function showToast(message){
         toast.textContent = message;
@@ -1353,57 +1358,15 @@
         return text.replace(/[ \t]+/g," ").trim();
       }
 
-      function endsWithPunctuation(text){
-        return /[。！？!?、…]$/.test(text.trim());
-      }
-
       function chooseSeparator(){
         const current = transcript.value;
         return current.length === 0 || /[\s\n]$/.test(current) ? "" : " ";
-      }
-
-      function clearPeriodTimer(){
-        clearTimeout(periodTimer);
-      }
-
-      function schedulePeriod(){
-        clearPeriodTimer();
-        if(!shouldContinue || !punctuationToggle.checked) return;
-
-        periodTimer = setTimeout(() => {
-          const current = transcript.value.trimEnd();
-          if(!current || /[。！？!?…]$/.test(current)) return;
-
-          transcript.value = current + "。";
-          updateStats();
-          moveToEnd();
-        }, 3000);
       }
 
       function moveToEnd(){
         if(!autoScrollToggle.checked) return;
         transcript.scrollTop = transcript.scrollHeight;
         transcript.selectionStart = transcript.selectionEnd = transcript.value.length;
-      }
-
-      function scheduleAutoBreak(){
-        clearTimeout(autoBreakTimer);
-        if(!shouldContinue || !autoBreakToggle.checked) return;
-
-        autoBreakTimer = setTimeout(() => {
-          const current = transcript.value.trimEnd();
-          if(!current || current.endsWith("\n")) return;
-
-          clearPeriodTimer();
-
-          transcript.value =
-            /[。！？!?…]$/.test(current)
-              ? current + "\n"
-              : current + "。\n";
-
-          updateStats();
-          moveToEnd();
-        }, 5000);
       }
 
       function appendFinalText(text){
@@ -1416,35 +1379,32 @@
         lastFinalText = cleaned;
         lastFinalAt = now;
         transcript.value += chooseSeparator() + cleaned;
-        lastFinalEventAt = now;
 
         updateStats();
         moveToEnd();
-        schedulePeriod();
-        scheduleAutoBreak();
       }
-
-      function restartRecognition(){
-        if(!shouldContinue || recognitionActive || !recognition) return;
-
-        clearTimeout(restartTimer);
-        const delay = Math.min(120 + restartAttempts * 120, 800);
-
-        restartTimer = setTimeout(() => {
-          if(!shouldContinue || recognitionActive) return;
-
-          try{
-            restartAttempts += 1;
-            recognition.start();
-          }catch(error){
-            if(error.name === "InvalidStateError"){
-              restartRecognition();
-            }else{
-              setStatus("再接続中","listening");
-              restartRecognition();
-            }
           }
         }, delay);
+      }
+
+      function continueRecognition(){
+        if(!shouldContinue) return;
+
+        clearTimeout(restartTimer);
+        restartTimer = setTimeout(() => {
+          if(!shouldContinue) return;
+
+          recognitionActive = false;
+          createRecognition();
+
+          try{
+            recognition.start();
+          }catch(error){
+            if(shouldContinue){
+              continueRecognition();
+            }
+          }
+        }, 300);
       }
 
       function createRecognition(){
@@ -1456,7 +1416,6 @@
 
         recognition.onstart = () => {
           recognitionActive = true;
-          restartAttempts = 0;
           clearTimeout(microphoneStartTimer);
           hideMicNotice();
           setRunning(true);
@@ -1474,8 +1433,6 @@
         };
 
         recognition.onresult = event => {
-          clearTimeout(autoBreakTimer);
-          clearPeriodTimer();
           let interim = "";
 
           for(let i = event.resultIndex; i < event.results.length; i++){
@@ -1500,7 +1457,7 @@
           }
 
           if(event.error === "network"){
-            setStatus("再接続中","listening");
+            setStatus("音声待機中","listening");
             return;
           }
 
@@ -1528,8 +1485,8 @@
           interimText.textContent = "";
 
           if(shouldContinue){
-            setStatus("再接続中","listening");
-            restartRecognition();
+            setStatus("音声待機中","listening");
+            continueRecognition();
           }else{
             setRunning(false);
             setStatus("停止中");
@@ -1541,7 +1498,6 @@
         if(!recognition) return;
 
         shouldContinue = true;
-        lastFinalEventAt = 0;
         setStatus("起動中","listening");
         showMicNotice("マイクの使用を確認しています。許可画面が表示された場合は「許可」を選んでください。");
         startClock();
@@ -1574,8 +1530,6 @@
         recognitionActive = false;
         clearTimeout(microphoneStartTimer);
         clearTimeout(restartTimer);
-        clearTimeout(autoBreakTimer);
-        clearPeriodTimer();
         interimText.textContent = "";
         stopClock();
 
@@ -1641,7 +1595,6 @@
         interimText.textContent = "";
         lastFinalText = "";
         lastFinalAt = 0;
-        lastFinalEventAt = 0;
         updateStats();
         transcript.focus();
       }
