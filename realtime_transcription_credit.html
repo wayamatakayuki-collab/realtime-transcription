@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>リアルタイム文字起こし Pro</title>
+  <meta name="theme-color" content="#0f172a" />
+  <style>
+    :root{
+      --bg-1:#0f172a;
+      --bg-2:#111827;
+      --bg-3:#1e293b;
+      --panel:#ffffff;
+      --panel-soft:rgba(255,255,255,.78);
+      --text:#0f172a;
+      --sub:#475569;
+      --line:#dbe3ef;
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --danger:#dc2626;
+      --danger-soft:#fee2e2;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+      --warn:#d97706;
+      --warn-soft:#fef3c7;
+      --shadow:0 20px 60px rgba(15,23,42,.20);
+      --radius-xl:24px;
+      --radius-lg:18px;
+      --radius-md:14px;
+      --radius-sm:12px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      min-height:100vh;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(59,130,246,.25), transparent 30%),
+        radial-gradient(circle at 90% 15%, rgba(168,85,247,.22), transparent 28%),
+        radial-gradient(circle at 70% 80%, rgba(16,185,129,.18), transparent 25%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3));
+    }
+
+    .shell{
+      width:min(1240px, calc(100% - 24px));
+      margin:0 auto;
+      padding:20px 0 28px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.35fr .9fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .hero-card, .side-card{
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.14);
+      backdrop-filter:blur(14px);
+      -webkit-backdrop-filter:blur(14px);
+      border-radius:28px;
+      padding:24px;
+      box-shadow:var(--shadow);
+      color:#fff;
+    }
+
+    .title{
+      margin:0;
+      font-size:clamp(30px, 4vw, 48px);
+      line-height:1.15;
+      letter-spacing:.02em;
+      font-weight:800;
+    }
+
+    .subtitle{
+      margin:12px 0 0;
+      font-size:15px;
+      line-height:1.8;
+      color:rgba(255,255,255,.88);
+      max-width:68ch;
+    }
+
+    .chip-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    .hero-chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:13px;
+      font-weight:700;
+      color:#fff;
+      white-space:nowrap;
+    }
+
+    .hero-chip .dot{
+      width:8px;height:8px;border-radius:50%;
+      background:#86efac;
+      box-shadow:0 0 0 6px rgba(134,239,172,.12);
+    }
+
+    .side-card{
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      gap:14px;
+    }
+
+    .side-title{
+      margin:0;
+      font-size:15px;
+      font-weight:800;
+      letter-spacing:.04em;
+      color:rgba(255,255,255,.9);
+    }
+
+    .side-list{
+      margin:0;
+      padding-left:18px;
+      color:rgba(255,255,255,.88);
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .main{
+      display:grid;
+      grid-template-columns:1fr 320px;
+      gap:16px;
+      align-items:start;
+    }
+
+    .workspace{
+      background:var(--panel-soft);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      border:1px solid rgba(255,255,255,.55);
+      box-shadow:var(--shadow);
+      border-radius:var(--radius-xl);
+      overflow:hidden;
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      padding:16px;
+      border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.72);
+    }
+
+    .button{
+      min-height:48px;
+      padding:0 16px;
+      border:none;
+      border-radius:14px;
+      font:inherit;
+      font-weight:800;
+      cursor:pointer;
+      transition:.15s ease;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      box-shadow:0 6px 18px rgba(15,23,42,.06);
+    }
+
+    .button:hover:not(:disabled){transform:translateY(-1px)}
+    .button:active:not(:disabled){transform:translateY(0)}
+    .button:disabled{opacity:.45;cursor:not-allowed}
+
+    .primary{
+      background:linear-gradient(180deg, #3b82f6, var(--primary));
+      color:#fff;
+    }
+
+    .danger{
+      background:var(--danger-soft);
+      color:var(--danger);
+      border:1px solid #fecaca;
+    }
+
+    .secondary{
+      background:#fff;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .toolbar-grow{flex:1 1 auto}
+
+    .field-group{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:14px;
+      min-height:48px;
+    }
+
+    .field-group label{
+      color:var(--sub);
+      font-size:13px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    select{
+      border:none;
+      background:transparent;
+      font:inherit;
+      color:var(--text);
+      outline:none;
+      min-width:76px;
+      font-weight:700;
+    }
+
+    .switch{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .switch input{display:none}
+
+    .switch-ui{
+      width:46px;
+      height:28px;
+      border-radius:999px;
+      background:#cbd5e1;
+      position:relative;
+      transition:.2s ease;
+    }
+
+    .switch-ui::after{
+      content:"";
+      position:absolute;
+      top:3px; left:3px;
+      width:22px; height:22px;
+      border-radius:50%;
+      background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,.16);
+      transition:.2s ease;
+    }
+
+    .switch input:checked + .switch-ui{
+      background:#60a5fa;
+    }
+
+    .switch input:checked + .switch-ui::after{
+      left:21px;
+    }
+
+    .statusbar{
+      display:grid;
+      grid-template-columns:1.2fr repeat(3, .8fr);
+      gap:12px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      background:rgba(248,250,252,.86);
+    }
+
+    .stat{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:14px;
+      min-height:88px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
+    }
+
+    .stat-label{
+      font-size:12px;
+      color:var(--sub);
+      font-weight:800;
+      letter-spacing:.03em;
+    }
+
+    .stat-value{
+      font-size:24px;
+      line-height:1.1;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      font-size:17px;
+      font-weight:900;
+    }
+
+    .live-dot{
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      background:#94a3b8;
+      flex:0 0 auto;
+    }
+
+    .live-dot.listening{
+      background:#22c55e;
+      box-shadow:0 0 0 8px rgba(34,197,94,.14);
+      animation:pulse 1.6s infinite;
+    }
+
+    .live-dot.error{
+      background:#ef4444;
+      box-shadow:none;
+      animation:none;
+    }
+
+    @keyframes pulse{
+      0%,100%{transform:scale(1);opacity:1}
+      50%{transform:scale(.95);opacity:.55}
+    }
+
+    .editor-zone{
+      padding:16px;
+    }
+
+    .editor-card{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 10px 24px rgba(15,23,42,.05);
+    }
+
+    .editor-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      background:#f8fafc;
+    }
+
+    .editor-title{
+      margin:0;
+      font-size:14px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .hint{
+      font-size:12px;
+      color:var(--sub);
+      font-weight:700;
+    }
+
+    #transcript{
+      width:100%;
+      min-height:58vh;
+      border:none;
+      outline:none;
+      resize:vertical;
+      padding:20px 20px 24px;
+      font:inherit;
+      font-size:22px;
+      line-height:1.95;
+      color:var(--text);
+      letter-spacing:.02em;
+      background:#fff;
+    }
+
+    .interim-wrap{
+      padding:0 16px 16px;
+    }
+
+    .interim-card{
+      min-height:58px;
+      border-radius:16px;
+      border:1px dashed #cbd5e1;
+      background:#f8fafc;
+      color:#64748b;
+      padding:12px 14px;
+      line-height:1.8;
+      font-size:14px;
+    }
+
+    .interim-card:empty::before{
+      content:"認識途中のテキストがここに表示されます";
+      color:#94a3b8;
+    }
+
+    .sidebar{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .card{
+      background:var(--panel-soft);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+      border:1px solid rgba(255,255,255,.55);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .card h3{
+      margin:0 0 12px;
+      font-size:16px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .info-list{
+      display:grid;
+      gap:10px;
+    }
+
+    .info-item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px 14px;
+    }
+
+    .info-item strong{
+      display:block;
+      font-size:13px;
+      margin-bottom:4px;
+      color:var(--sub);
+    }
+
+    .info-item span{
+      font-size:14px;
+      line-height:1.7;
+      color:var(--text);
+    }
+
+    .note{
+      margin:0;
+      font-size:13px;
+      line-height:1.8;
+      color:var(--sub);
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:26px;
+      transform:translate(-50%,18px);
+      background:#0f172a;
+      color:#fff;
+      border-radius:999px;
+      padding:12px 18px;
+      font-size:14px;
+      font-weight:800;
+      box-shadow:0 16px 40px rgba(15,23,42,.35);
+      opacity:0;
+      pointer-events:none;
+      transition:.2s ease;
+      z-index:50;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translate(-50%,0);
+    }
+
+    .footer{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      color:rgba(255,255,255,.82);
+      font-size:12px;
+      line-height:1.7;
+      padding:0 4px 6px;
+    }
+
+    .unsupported{
+      margin-top:12px;
+      padding:14px 16px;
+      background:var(--warn-soft);
+      border:1px solid #fcd34d;
+      border-radius:18px;
+      color:#92400e;
+      font-size:14px;
+      line-height:1.8;
+    }
+
+
+    .credit{
+      margin-top:18px;
+      padding:10px 4px 2px;
+      text-align:center;
+      color:rgba(255,255,255,.72);
+      font-size:12px;
+      letter-spacing:.04em;
+    }
+
+    .simple-hero{grid-template-columns:1fr;}
+    .simple-hero-card{padding:22px 24px;}
+    .single-column{grid-template-columns:1fr;}
+    @media (max-width: 1080px){
+      .hero{grid-template-columns:1fr}
+      .main{grid-template-columns:1fr}
+      .statusbar{grid-template-columns:1fr 1fr}
+    }
+
+    @media (max-width: 720px){
+      .shell{width:min(100% - 14px, 1240px); padding-top:14px}
+      .hero-card,.side-card,.workspace,.card{border-radius:22px}
+      .hero-card,.side-card{padding:18px}
+      .toolbar{padding:14px}
+      .toolbar .button{flex:1 1 calc(50% - 8px)}
+      .toolbar-grow{display:none}
+      .field-group{width:100%; justify-content:space-between}
+      .statusbar{grid-template-columns:1fr}
+      #transcript{font-size:20px; min-height:52vh; padding:16px}
+      .editor-head{display:block}
+      .hint{display:block; margin-top:6px}
+      .footer{padding-bottom:14px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero simple-hero">
+      <div class="hero-card simple-hero-card">
+        <h1 class="title">リアルタイム文字起こし</h1>
+      </div>
+    </section>
+
+    <section class="main single-column">
+      <div class="workspace">
+        <div class="toolbar">
+          <button id="startButton" class="button primary" type="button">● 文字起こし開始</button>
+          <button id="stopButton" class="button danger" type="button" disabled>■ 停止</button>
+          <button id="copyButton" class="button secondary" type="button">全文コピー</button>
+          <button id="clearButton" class="button secondary" type="button">全文クリア</button>
+
+          <div class="toolbar-grow"></div>
+
+          <div class="field-group">
+            <label for="fontSizeSelect">文字サイズ</label>
+            <select id="fontSizeSelect">
+              <option value="18">小</option>
+              <option value="22" selected>標準</option>
+              <option value="28">大</option>
+              <option value="34">特大</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="switch">
+              <span>自動スクロール</span>
+              <input id="autoScrollToggle" type="checkbox" checked />
+              <span class="switch-ui"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="statusbar">
+          <div class="stat">
+            <div class="stat-label">現在の状態</div>
+            <div class="status-pill">
+              <span id="statusDot" class="live-dot"></span>
+              <span id="statusText">待機中</span>
+            </div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">文字数</div>
+            <div id="characterCount" class="stat-value">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">行数</div>
+            <div id="lineCount" class="stat-value">0</div>
+          </div>
+
+          <div class="stat">
+            <div class="stat-label">経過時間</div>
+            <div id="elapsedTime" class="stat-value">00:00</div>
+          </div>
+        </div>
+
+        <div class="editor-zone">
+          <div class="editor-card">
+            <div class="editor-head">
+              <h2 class="editor-title">文字起こしテキスト</h2>
+              <span class="hint">文章はここで直接修正できます</span>
+            </div>
+            <textarea id="transcript" placeholder="「文字起こし開始」を押すと、ここに文章が表示されます。"></textarea>
+          </div>
+        </div>
+
+        <div class="interim-wrap">
+          <div id="interimText" class="interim-card" aria-live="polite"></div>
+        </div>
+      </div>
+
+
+    </section>
+
+
+    <footer class="credit">@2026 Takayuki WAYAMA</footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      const transcript = document.getElementById("transcript");
+      const interimText = document.getElementById("interimText");
+      const startButton = document.getElementById("startButton");
+      const stopButton = document.getElementById("stopButton");
+      const copyButton = document.getElementById("copyButton");
+      const clearButton = document.getElementById("clearButton");
+      const fontSizeSelect = document.getElementById("fontSizeSelect");
+      const autoScrollToggle = document.getElementById("autoScrollToggle");
+      const statusText = document.getElementById("statusText");
+      const statusDot = document.getElementById("statusDot");
+      const characterCount = document.getElementById("characterCount");
+      const lineCount = document.getElementById("lineCount");
+      const elapsedTime = document.getElementById("elapsedTime");
+      const toast = document.getElementById("toast");
+
+      let recognition = null;
+      let shouldContinue = false;
+      let restartTimer = null;
+      let lastFinalText = "";
+      let lastFinalAt = 0;
+      let startTime = null;
+      let timeTimer = null;
+
+      function showToast(message){
+        toast.textContent = message;
+        toast.classList.add("show");
+        window.setTimeout(() => toast.classList.remove("show"), 1800);
+      }
+
+      function normalizeText(text){
+        return text.replace(/\s+/g, " ").trim();
+      }
+
+      function updateStats(){
+        const text = transcript.value;
+        characterCount.textContent = text.length.toLocaleString("ja-JP");
+        lineCount.textContent = text ? text.split(/\n/).length.toLocaleString("ja-JP") : "0";
+      }
+
+      function setStatus(message, mode="idle"){
+        statusText.textContent = message;
+        statusDot.className = "live-dot";
+        if(mode === "listening") statusDot.classList.add("listening");
+        if(mode === "error") statusDot.classList.add("error");
+      }
+
+      function setRunning(running){
+        startButton.disabled = running;
+        stopButton.disabled = !running;
+      }
+
+      function formatDuration(ms){
+        const totalSec = Math.floor(ms / 1000);
+        const min = String(Math.floor(totalSec / 60)).padStart(2, "0");
+        const sec = String(totalSec % 60).padStart(2, "0");
+        return `${min}:${sec}`;
+      }
+
+      function startClock(){
+        startTime = Date.now();
+        elapsedTime.textContent = "00:00";
+        clearInterval(timeTimer);
+        timeTimer = setInterval(() => {
+          if(startTime){
+            elapsedTime.textContent = formatDuration(Date.now() - startTime);
+          }
+        }, 500);
+      }
+
+      function stopClock(){
+        clearInterval(timeTimer);
+        timeTimer = null;
+        startTime = null;
+        elapsedTime.textContent = "00:00";
+      }
+
+      function appendFinalText(text){
+        const cleaned = normalizeText(text);
+        if(!cleaned) return;
+
+        const now = Date.now();
+        if(cleaned === lastFinalText && now - lastFinalAt < 1800) return;
+
+        lastFinalText = cleaned;
+        lastFinalAt = now;
+
+        const existing = transcript.value;
+        const needsSpace = existing.length > 0 && !/[\s\n]$/.test(existing);
+        transcript.value = existing + (needsSpace ? " " : "") + cleaned;
+        updateStats();
+
+        if(autoScrollToggle.checked){
+          transcript.scrollTop = transcript.scrollHeight;
+          transcript.selectionStart = transcript.selectionEnd = transcript.value.length;
+        }
+      }
+
+      function scheduleRestart(){
+        clearTimeout(restartTimer);
+        if(!shouldContinue || !recognition) return;
+        restartTimer = setTimeout(() => {
+          try{
+            recognition.start();
+          }catch(error){
+            scheduleRestart();
+          }
+        }, 350);
+      }
+
+      function createRecognition(){
+        recognition = new SpeechRecognition();
+        recognition.lang = "ja-JP";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          setRunning(true);
+          setStatus("音声を認識中", "listening");
+        };
+
+        recognition.onresult = (event) => {
+          let interim = "";
+          for(let i = event.resultIndex; i < event.results.length; i++){
+            const result = event.results[i];
+            const text = result[0]?.transcript || "";
+            if(result.isFinal){
+              appendFinalText(text);
+            }else{
+              interim += text;
+            }
+          }
+          interimText.textContent = normalizeText(interim);
+        };
+
+        recognition.onerror = (event) => {
+          const error = event.error;
+
+          if(error === "no-speech"){
+            setStatus("音声を待っています", "listening");
+            return;
+          }
+
+          if(error === "aborted") return;
+
+          shouldContinue = false;
+          setRunning(false);
+          interimText.textContent = "";
+          stopClock();
+
+          const messages = {
+            "not-allowed":"マイクが許可されていません。ブラウザの設定でマイクを許可してください。",
+            "service-not-allowed":"この環境では音声認識サービスを利用できません。",
+            "audio-capture":"マイクを利用できません。接続や端末設定を確認してください。",
+            "network":"通信エラーが発生しました。接続を確認してください。",
+            "language-not-supported":"この環境では日本語の音声認識が利用できません。"
+          };
+
+          setStatus(messages[error] || `音声認識エラー：${error}`, "error");
+        };
+
+        recognition.onend = () => {
+          interimText.textContent = "";
+          if(shouldContinue){
+            setStatus("再接続中", "listening");
+            scheduleRestart();
+          }else{
+            setRunning(false);
+            setStatus("停止中");
+          }
+        };
+      }
+
+      function startRecognition(){
+        if(!recognition) return;
+        shouldContinue = true;
+        setStatus("マイクを起動しています", "listening");
+        startClock();
+
+        try{
+          recognition.start();
+        }catch(error){
+          if(error.name !== "InvalidStateError"){
+            shouldContinue = false;
+            setRunning(false);
+            stopClock();
+            setStatus("音声認識を開始できませんでした", "error");
+          }
+        }
+      }
+
+      function stopRecognition(){
+        shouldContinue = false;
+        clearTimeout(restartTimer);
+        interimText.textContent = "";
+        stopClock();
+
+        if(recognition){
+          try{
+            recognition.stop();
+          }catch(error){}
+        }
+
+        setRunning(false);
+        setStatus("停止中");
+      }
+
+      async function copyTranscript(){
+        const text = transcript.value;
+        if(!text){
+          showToast("コピーする文章がありません");
+          return;
+        }
+
+        try{
+          await navigator.clipboard.writeText(text);
+          showToast("全文をコピーしました");
+        }catch(error){
+          transcript.focus();
+          transcript.select();
+          const copied = document.execCommand("copy");
+          transcript.setSelectionRange(transcript.value.length, transcript.value.length);
+          showToast(copied ? "全文をコピーしました" : "コピーできませんでした");
+        }
+      }
+
+      function clearTranscript(){
+        if(!transcript.value){
+          showToast("消去する文章がありません");
+          return;
+        }
+
+        const confirmed = window.confirm("表示中の文章をすべて消しますか？");
+        if(!confirmed) return;
+
+        transcript.value = "";
+        interimText.textContent = "";
+        lastFinalText = "";
+        lastFinalAt = 0;
+        updateStats();
+        transcript.focus();
+        showToast("全文をクリアしました");
+      }
+
+      if(!SpeechRecognition){
+        startButton.disabled = true;
+        setStatus("このブラウザは非対応です", "error");
+      }else{
+        createRecognition();
+      }
+
+      startButton.addEventListener("click", startRecognition);
+      stopButton.addEventListener("click", stopRecognition);
+      copyButton.addEventListener("click", copyTranscript);
+      clearButton.addEventListener("click", clearTranscript);
+      transcript.addEventListener("input", updateStats);
+
+      fontSizeSelect.addEventListener("change", () => {
+        transcript.style.fontSize = `${fontSizeSelect.value}px`;
+      });
+
+      window.addEventListener("beforeunload", () => {
+        shouldContinue = false;
+        clearInterval(timeTimer);
+        if(recognition){
+          try{
+            recognition.abort();
+          }catch(error){}
+        }
+      });
+
+      updateStats();
+    })();
+  </script>
+</body>
+</html>
