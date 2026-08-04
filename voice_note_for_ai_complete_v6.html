@@ -1,0 +1,3590 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<meta content="#ffffff" name="theme-color"/>
+<title>Voice Note for AI｜AIへ橋渡しするための音声入力アプリ</title>
+<style>
+    :root{
+      --bg:#f3f6fb;
+      --panel:#ffffff;
+      --panel-2:#f8fafc;
+      --panel-3:#eef3f8;
+      --text:#182230;
+      --muted:#667085;
+      --line:#dbe3ec;
+      --line-strong:#c3cfdd;
+      --primary:#2563eb;
+      --primary-dark:#1d4ed8;
+      --primary-soft:#eaf1ff;
+      --danger:#d92d20;
+      --danger-soft:#fff1f0;
+      --success:#039855;
+      --shadow:0 18px 50px rgba(30,55,90,.10);
+      --radius:22px;
+    }
+
+
+    :root[data-theme="dark"]{
+      --bg:#0a1020;
+      --panel:#111827;
+      --panel-2:#172033;
+      --panel-3:#0d1526;
+      --text:#f8fafc;
+      --muted:#94a3b8;
+      --line:#243047;
+      --line-strong:#334155;
+      --primary:#3b82f6;
+      --primary-dark:#2563eb;
+      --primary-soft:rgba(59,130,246,.14);
+      --danger:#f87171;
+      --danger-soft:rgba(248,113,113,.10);
+      --success:#22c55e;
+      --shadow:0 26px 80px rgba(0,0,0,.36);
+    }
+
+    :root[data-theme="dark"] body{
+      background:
+        radial-gradient(circle at 8% 8%, rgba(37,99,235,.17), transparent 28rem),
+        radial-gradient(circle at 88% 12%, rgba(14,165,233,.08), transparent 24rem),
+        linear-gradient(180deg,#0a1020 0%,#080d18 100%);
+    }
+
+    :root[data-theme="dark"] .title-wrap h1{color:#f8fafc}
+    :root[data-theme="dark"] .panel{background:rgba(17,24,39,.96);border-color:rgba(71,85,105,.45)}
+    :root[data-theme="dark"] .main-toolbar{background:linear-gradient(180deg,#172033,#111827)}
+    :root[data-theme="dark"] .settings{background:#0d1526}
+    :root[data-theme="dark"] .setting,
+    :root[data-theme="dark"] .tool-btn{background:#172033;color:#f8fafc}
+    :root[data-theme="dark"] .statusbar{background:#101827}
+    :root[data-theme="dark"] .metric strong{color:#e2e8f0}
+    :root[data-theme="dark"] .editor-wrap,
+    :root[data-theme="dark"] .editor-box,
+    :root[data-theme="dark"] #transcript{background:#0c1423;color:#f8fafc}
+    :root[data-theme="dark"] .interim{background:rgba(30,41,59,.96);border-color:#3b4a60;color:#94a3b8}
+    :root[data-theme="dark"] .toast{background:#e2e8f0;color:#111827}
+
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37,99,235,.08), transparent 28rem),
+        linear-gradient(180deg,#f8fbff 0%,var(--bg) 100%);
+      color:var(--text);
+    }
+
+    button,select,textarea{font:inherit}
+
+    .app{
+      width:min(1380px,calc(100% - 44px));
+      margin:0 auto;
+      padding:28px 0 36px;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      margin-bottom:16px;
+    }
+
+    .title-wrap{
+      display:flex;
+      align-items:center;
+      gap:13px;
+      min-width:0;
+    }
+
+    .title-wrap::before{
+      content:"";
+      width:8px;
+      height:38px;
+      border-radius:999px;
+      background:linear-gradient(180deg,#4f8df7,#2563eb);
+      box-shadow:0 0 18px rgba(37,99,235,.22);
+      flex:none;
+    }
+
+    .title-wrap h1{
+      margin:0;
+      font-size:31px;
+      line-height:1.15;
+      letter-spacing:-.025em;
+      font-weight:800;
+      color:#162033;
+      white-space:nowrap;
+    }
+
+    .header-actions{
+      display:flex;
+      gap:8px;
+      flex:none;
+    }
+
+    .tool-btn,
+    .primary-btn,
+    .danger-btn{
+      min-height:44px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      padding:0 15px;
+      background:#fff;
+      color:var(--text);
+      font-weight:700;
+      cursor:pointer;
+      transition:.15s ease;
+      box-shadow:0 4px 12px rgba(30,55,90,.05);
+    }
+
+    .tool-btn:hover:not(:disabled){
+      border-color:var(--line-strong);
+      background:#f8fafc;
+      transform:translateY(-1px);
+    }
+
+    .primary-btn{
+      background:linear-gradient(180deg,#3f7ff0,var(--primary));
+      border-color:#3f7ff0;
+      color:#fff;
+      box-shadow:0 8px 20px rgba(37,99,235,.20);
+    }
+
+    .primary-btn:hover:not(:disabled){
+      background:linear-gradient(180deg,#4b8af8,var(--primary-dark));
+      transform:translateY(-1px);
+    }
+
+    .danger-btn{
+      background:var(--danger-soft);
+      border-color:#f8c7c3;
+      color:var(--danger);
+    }
+
+    button:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+    .panel{
+      background:rgba(255,255,255,.96);
+      border:1px solid rgba(219,227,236,.95);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .main-toolbar{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,#ffffff,#fbfcfe);
+    }
+
+    .main-toolbar .spacer{flex:1 1 auto}
+
+    .settings{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:11px 16px;
+      background:var(--panel-2);
+      border-bottom:1px solid var(--line);
+      overflow-x:auto;
+      scrollbar-width:none;
+    }
+
+    .settings::-webkit-scrollbar{display:none}
+
+    .setting{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-height:38px;
+      padding:0 12px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fff;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+      flex:none;
+      white-space:nowrap;
+    }
+
+    .setting select{
+      border:0;
+      outline:0;
+      background:transparent;
+      color:var(--text);
+      font-weight:700;
+    }
+
+    .switch{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .switch input{display:none}
+
+    .switch-ui{
+      width:36px;
+      height:21px;
+      border-radius:999px;
+      background:#cbd5e1;
+      position:relative;
+      transition:.18s ease;
+    }
+
+    .switch-ui::after{
+      content:"";
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:15px;
+      height:15px;
+      border-radius:50%;
+      background:#fff;
+      transition:.18s ease;
+      box-shadow:0 1px 4px rgba(16,24,40,.18);
+    }
+
+    .switch input:checked + .switch-ui{
+      background:var(--primary);
+    }
+
+    .switch input:checked + .switch-ui::after{
+      left:18px;
+    }
+
+    .statusbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      padding:12px 16px;
+      border-bottom:1px solid var(--line);
+      background:#fff;
+    }
+
+    .status-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:13px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .status-dot{
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:#98a2b3;
+    }
+
+    .status-dot.listening{
+      background:var(--success);
+      box-shadow:0 0 0 6px rgba(3,152,85,.12);
+      animation:pulse 1.5s infinite;
+    }
+
+    .status-dot.error{background:var(--danger)}
+    @keyframes pulse{50%{opacity:.45}}
+
+    .metrics{
+      display:flex;
+      gap:22px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .metric{white-space:nowrap}
+
+    .metric strong{
+      color:var(--text);
+      font-size:14px;
+      margin-left:6px;
+    }
+
+    .editor-wrap{
+      padding:16px;
+      background:#fff;
+    }
+
+    .editor-box{
+      position:relative;
+      border:1px solid var(--line);
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow:inset 0 1px 0 rgba(16,24,40,.02);
+    }
+
+    #transcript{
+      width:100%;
+      min-height:64vh;
+      border:0;
+      outline:0;
+      resize:vertical;
+      padding:24px 24px 86px;
+      font-size:22px;
+      line-height:1.9;
+      letter-spacing:.01em;
+      color:var(--text);
+      background:#fff;
+      caret-color:var(--primary);
+    }
+
+    #transcript::placeholder{color:#98a2b3}
+
+    .interim{
+      position:absolute;
+      left:14px;
+      right:14px;
+      bottom:14px;
+      min-height:44px;
+      max-height:70px;
+      overflow:auto;
+      padding:10px 12px;
+      border-radius:10px;
+      background:#f8fafc;
+      border:1px dashed var(--line-strong);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+      pointer-events:none;
+    }
+
+    .interim:empty::before{
+      content:"認識途中のテキスト";
+      color:#98a2b3;
+    }
+
+    .credit{
+      text-align:center;
+      color:#98a2b3;
+      font-size:11px;
+      padding:16px 0 0;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:26px;
+      transform:translate(-50%,16px);
+      background:#182230;
+      color:#fff;
+      border-radius:999px;
+      padding:10px 16px;
+      font-size:13px;
+      font-weight:700;
+      opacity:0;
+      pointer-events:none;
+      transition:.18s ease;
+      z-index:100;
+      box-shadow:0 12px 28px rgba(16,24,40,.22);
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translate(-50%,0);
+    }
+
+    @media (max-width: 1024px){
+      .app{
+        width:min(100% - 24px,1024px);
+        padding-top:20px;
+      }
+
+      .title-wrap h1{font-size:27px}
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar .tool-btn{
+        flex:1 1 calc(25% - 9px);
+        white-space:nowrap;
+      }
+
+      .main-toolbar .spacer{display:none}
+      .statusbar{flex-wrap:wrap}
+      #transcript{min-height:60vh}
+    }
+
+    @media (max-width: 680px){
+      .app{
+        width:100%;
+        padding:0 0 calc(134px + env(safe-area-inset-bottom));
+      }
+
+      .header{
+        position:sticky;
+        top:0;
+        z-index:20;
+        margin:0;
+        padding:12px 13px;
+        background:rgba(255,255,255,.96);
+        backdrop-filter:blur(14px);
+        border-bottom:1px solid var(--line);
+      }
+
+      .title-wrap{
+        gap:9px;
+        min-width:0;
+        flex:1 1 auto;
+      }
+
+      .title-wrap::before{
+        width:6px;
+        height:27px;
+      }
+
+      .title-wrap h1{
+        font-size:18px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      .header-actions .tool-btn{
+        min-height:38px;
+        padding:0 10px;
+        font-size:11px;
+        white-space:nowrap;
+      }
+
+      .panel{
+        border:0;
+        border-radius:0;
+        box-shadow:none;
+      }
+
+      .settings{
+        padding:9px 10px;
+        gap:7px;
+      }
+
+      .statusbar{
+        padding:10px 12px;
+        gap:10px;
+      }
+
+      .metrics{
+        width:100%;
+        justify-content:space-between;
+        gap:6px;
+      }
+
+      .editor-wrap{padding:9px}
+      .editor-box{border-radius:12px}
+
+      #transcript{
+        min-height:calc(100vh - 280px);
+        resize:none;
+        padding:16px 14px 76px;
+        font-size:20px;
+        line-height:1.82;
+      }
+
+      .interim{
+        left:8px;
+        right:8px;
+        bottom:8px;
+      }
+
+      .credit{display:none}
+
+      .main-toolbar{
+        position:fixed;
+        left:0;
+        right:0;
+        bottom:0;
+        z-index:50;
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        grid-auto-rows:50px;
+        gap:8px;
+        padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+        background:rgba(255,255,255,.98);
+        backdrop-filter:blur(14px);
+        border-top:1px solid var(--line);
+        border-bottom:0;
+        box-shadow:0 -10px 30px rgba(30,55,90,.10);
+      }
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar .tool-btn{
+        width:100%;
+        min-width:0;
+        min-height:50px;
+        padding:0 4px;
+        font-size:11px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      #downloadButton{grid-column:1/3}
+      #clearButton{grid-column:3/5}
+      .main-toolbar .spacer{display:none}
+    }
+  </style>
+<style id="theme-mobile-overrides">
+    .mobile-dock{display:none}
+
+    @media (max-width:680px){
+      .app{
+        padding-bottom:calc(82px + env(safe-area-inset-bottom));
+      }
+
+      .header-actions{
+        display:flex;
+        gap:6px;
+      }
+
+      .header-actions .tool-btn{
+        max-width:112px;
+      }
+
+      .main-toolbar{
+        position:static;
+        display:flex;
+        flex-wrap:nowrap;
+        gap:7px;
+        overflow-x:auto;
+        padding:9px 10px;
+        background:#fff;
+        border-top:0;
+        border-bottom:1px solid var(--line);
+        box-shadow:none;
+        scrollbar-width:none;
+      }
+
+      :root[data-theme="dark"] .main-toolbar{
+        background:#111827;
+      }
+
+      .main-toolbar::-webkit-scrollbar{
+        display:none;
+      }
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar #copyButton{
+        display:none;
+      }
+
+      .main-toolbar .tool-btn{
+        display:block;
+        flex:0 0 auto;
+        width:auto;
+        min-width:88px;
+        height:42px;
+        min-height:42px;
+        padding:0 12px;
+        font-size:11px;
+        overflow:visible;
+        text-overflow:clip;
+      }
+
+      .main-toolbar .spacer{
+        display:none;
+      }
+
+      #timestampButton,
+      #downloadButton,
+      #clearButton{
+        display:block;
+        grid-column:auto;
+      }
+
+      .mobile-dock{
+        position:fixed;
+        left:0;
+        right:0;
+        bottom:0;
+        z-index:60;
+        display:grid;
+        grid-template-columns:1fr 1fr 1fr;
+        gap:8px;
+        padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+        background:rgba(255,255,255,.97);
+        border-top:1px solid var(--line);
+        box-shadow:0 -10px 30px rgba(30,55,90,.10);
+        backdrop-filter:blur(14px);
+      }
+
+      :root[data-theme="dark"] .mobile-dock{
+        background:rgba(10,16,32,.97);
+      }
+
+      .mobile-dock button{
+        min-width:0;
+        min-height:50px;
+        padding:0 8px;
+        border-radius:12px;
+        font-size:12px;
+        white-space:nowrap;
+      }
+
+      #transcript{
+        min-height:calc(100vh - 238px);
+      }
+    }
+  </style>
+<style id="theme-button-fix">
+    :root[data-theme="dark"] #themeButton{
+      background:#ffffff;
+      color:#182230;
+      border-color:#dbe3ec;
+    }
+
+    :root[data-theme="dark"] #themeButton:hover:not(:disabled){
+      background:#f8fafc;
+      color:#111827;
+      border-color:#c3cfdd;
+    }
+  </style>
+<style id="mobile-only-final-fix">
+    @media (max-width:680px){
+      /* タイトルを必ず1行で収める */
+      .header{
+        align-items:center;
+        gap:8px;
+      }
+
+      .title-wrap{
+        min-width:0;
+        flex:1 1 auto;
+        gap:8px;
+      }
+
+      .title-wrap h1{
+        display:block;
+        min-width:0;
+        max-width:100%;
+        font-size:16px;
+        line-height:1.2;
+        white-space:nowrap;
+        overflow:visible;
+        text-overflow:clip;
+        color:#162033;
+      }
+
+      /* ダーク時もスマホのタイトルを見える色に固定 */
+      :root[data-theme="dark"] .title-wrap h1{
+        color:#ffffff;
+      }
+
+      /* ヘッダー右側のボタンを少し小さく */
+      .header-actions{
+        gap:5px;
+      }
+
+      .header-actions .tool-btn{
+        min-height:36px;
+        padding:0 8px;
+        font-size:10px;
+      }
+
+      /* 自動スクロールを最初から見える位置へ */
+      .settings{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+        overflow:visible;
+        padding:9px 10px;
+      }
+
+      .setting{
+        width:100%;
+        min-width:0;
+        justify-content:space-between;
+        padding:0 10px;
+        white-space:nowrap;
+      }
+
+      /* 文字サイズは横幅を広く使う */
+      .setting:first-child{
+        grid-column:1 / -1;
+      }
+
+      /* クレジットをスマホでも表示 */
+      .credit{
+        display:block;
+        padding:12px 0 calc(92px + env(safe-area-inset-bottom));
+        color:#98a2b3;
+        font-size:10px;
+        text-align:center;
+      }
+
+      :root[data-theme="dark"] .credit{
+        color:#94a3b8;
+      }
+
+      /* クレジット分だけ本文下部に余裕を確保 */
+      .app{
+        padding-bottom:0;
+      }
+
+      #transcript{
+        min-height:calc(100vh - 300px);
+      }
+    }
+  </style>
+<style id="final-responsive-check">
+    .mobile-credit{
+      display:none;
+    }
+
+    @media (min-width:681px) and (max-width:1024px){
+      .main-toolbar{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+      }
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar .tool-btn{
+        width:100%;
+        min-width:0;
+        white-space:nowrap;
+      }
+
+      .main-toolbar .spacer{
+        display:none;
+      }
+
+      .settings{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        overflow:visible;
+      }
+
+      .setting{
+        min-width:0;
+        justify-content:space-between;
+      }
+
+      .statusbar{
+        display:grid;
+        grid-template-columns:1fr auto;
+      }
+
+      .metrics{
+        width:auto;
+      }
+    }
+
+    @media (max-width:680px){
+      .app{
+        padding-bottom:calc(82px + env(safe-area-inset-bottom));
+      }
+
+      .header{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:9px;
+        padding:11px 12px 10px;
+      }
+
+      .title-wrap{
+        width:100%;
+        min-width:0;
+        align-items:center;
+      }
+
+      .mobile-title-block{
+        min-width:0;
+      }
+
+      .title-wrap h1{
+        font-size:18px;
+        line-height:1.2;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      .mobile-credit{
+        display:block;
+        margin-top:3px;
+        color:#98a2b3;
+        font-size:9px;
+        line-height:1.2;
+      }
+
+      :root[data-theme="dark"] .mobile-credit{
+        color:#94a3b8;
+      }
+
+      .header-actions{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        width:100%;
+        gap:7px;
+      }
+
+      .header-actions .tool-btn{
+        width:100%;
+        max-width:none;
+        min-height:38px;
+        padding:0 8px;
+        font-size:11px;
+        white-space:nowrap;
+      }
+
+      /* 4つの補助操作は画面上部に2×2で常時表示 */
+      .main-toolbar{
+        position:static;
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+        overflow:visible;
+        padding:9px 10px;
+        background:#ffffff;
+        border-top:0;
+        border-bottom:1px solid var(--line);
+        box-shadow:none;
+      }
+
+      :root[data-theme="dark"] .main-toolbar{
+        background:#111827;
+      }
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar #copyButton,
+      .main-toolbar .spacer{
+        display:none;
+      }
+
+      #downloadButton,
+      #clearButton{
+        display:block;
+        width:100%;
+        min-width:0;
+        min-height:44px;
+        grid-column:auto;
+        padding:0 8px;
+        font-size:11px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      /* 設定は2×2で全項目が一目で見える */
+      .settings{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+        overflow:visible;
+        padding:9px 10px;
+      }
+
+      .setting,
+      .setting:first-child{
+        grid-column:auto;
+        width:100%;
+        min-width:0;
+        justify-content:space-between;
+        padding:0 9px;
+        font-size:11px;
+      }
+
+      .statusbar{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:8px;
+        padding:9px 11px;
+      }
+
+      .metrics{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        width:100%;
+        gap:6px;
+      }
+
+      .metric{
+        text-align:center;
+      }
+
+      .editor-wrap{
+        padding:8px;
+      }
+
+      #transcript{
+        min-height:calc(100vh - 340px);
+        padding:15px 13px 72px;
+      }
+
+      /* 下部には主要3操作のみ */
+      .mobile-dock{
+        grid-template-columns:repeat(3,1fr);
+      }
+
+      .credit{
+        display:none;
+      }
+    }
+
+    @media (max-width:390px){
+      .title-wrap h1{
+        font-size:17px;
+      }
+
+      .header-actions .tool-btn{
+        font-size:10px;
+      }
+
+      .setting{
+        font-size:10px;
+      }
+    }
+  </style>
+<style id="final-contrast-fix">
+    /* 停止ボタンは全端末・全テーマで赤背景＋白文字 */
+    .danger-btn,
+    :root[data-theme="dark"] .danger-btn{
+      background:#dc2626;
+      border-color:#dc2626;
+      color:#ffffff;
+      box-shadow:0 7px 18px rgba(220,38,38,.20);
+    }
+
+    .danger-btn:hover:not(:disabled),
+    :root[data-theme="dark"] .danger-btn:hover:not(:disabled){
+      background:#b91c1c;
+      border-color:#b91c1c;
+      color:#ffffff;
+    }
+
+    .danger-btn:disabled,
+    :root[data-theme="dark"] .danger-btn:disabled{
+      background:#dc2626;
+      border-color:#dc2626;
+      color:#ffffff;
+      opacity:.55;
+    }
+
+    /* スマホのヘッダーは明るい背景なので、ダーク表示中もタイトルは黒字 */
+    @media (max-width:680px){
+      :root[data-theme="dark"] .header{
+        background:rgba(255,255,255,.97);
+        border-bottom-color:#dbe3ec;
+      }
+
+      :root[data-theme="dark"] .title-wrap h1{
+        color:#162033;
+      }
+
+      :root[data-theme="dark"] .mobile-credit{
+        color:#667085;
+      }
+
+      :root[data-theme="dark"] .title-wrap::before{
+        background:linear-gradient(180deg,#4f8df7,#2563eb);
+      }
+    }
+  </style>
+<style id="header-unify-fix">
+    /* スマホ・タブレットのヘッダー配色をPCと統一 */
+    @media (max-width:1024px){
+      .header,
+      :root[data-theme="dark"] .header{
+        background:transparent;
+        border-bottom:0;
+        backdrop-filter:none;
+      }
+
+      .title-wrap h1{
+        color:#162033;
+      }
+
+      :root[data-theme="dark"] .title-wrap h1{
+        color:#f8fafc;
+      }
+
+      .mobile-credit{
+        color:#98a2b3;
+      }
+
+      :root[data-theme="dark"] .mobile-credit{
+        color:#94a3b8;
+      }
+    }
+
+    @media (max-width:680px){
+      .header{
+        position:static;
+      }
+    }
+  </style>
+<style id="microphone-notice-style">
+    .mic-notice{
+      margin:12px 16px 0;
+      padding:12px 14px;
+      border:1px solid #f6c85f;
+      border-radius:12px;
+      background:#fff8e6;
+      color:#8a5a00;
+      font-size:13px;
+      font-weight:700;
+      line-height:1.6;
+    }
+
+    :root[data-theme="dark"] .mic-notice{
+      background:#2a2212;
+      border-color:#7a5b18;
+      color:#f8d477;
+    }
+
+    .mic-notice[hidden]{
+      display:none;
+    }
+
+    @media (max-width:680px){
+      .mic-notice{
+        margin:9px 10px 0;
+        padding:11px 12px;
+        font-size:12px;
+      }
+    }
+  </style>
+<style id="wake-lock-visual-state">
+    #wakeButton{
+      transition:background-color .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    #wakeButton.wake-active{
+      background:#039855;
+      border-color:#039855;
+      color:#ffffff;
+      box-shadow:0 8px 20px rgba(3,152,85,.22);
+    }
+
+    #wakeButton.wake-active:hover:not(:disabled){
+      background:#027a48;
+      border-color:#027a48;
+      color:#ffffff;
+    }
+
+    :root[data-theme="dark"] #wakeButton.wake-active{
+      background:#22c55e;
+      border-color:#22c55e;
+      color:#052e16;
+      box-shadow:0 8px 20px rgba(34,197,94,.24);
+    }
+
+    :root[data-theme="dark"] #wakeButton.wake-active:hover:not(:disabled){
+      background:#16a34a;
+      border-color:#16a34a;
+      color:#ffffff;
+    }
+  </style>
+<style id="complete-version-adjustments">
+    :root[data-theme="dark"] #copyButton:hover:not(:disabled),
+    :root[data-theme="dark"] #downloadButton:hover:not(:disabled),
+    :root[data-theme="dark"] #wakeButton:not(.wake-active):hover:not(:disabled){
+      background:#243047;
+      border-color:#64748b;
+      color:#ffffff;
+    }
+
+    :root[data-theme="dark"] #wakeButton.wake-active:hover:not(:disabled){
+      background:#16a34a;
+      border-color:#16a34a;
+      color:#ffffff;
+    }
+
+    .settings{
+      justify-content:flex-start;
+    }
+
+    @media (max-width:1024px){
+      .settings{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+  </style>
+<style id="punctuation-adjustment-styles">
+    .punctuation-setting{
+      gap:7px;
+    }
+
+    .mini-setting-button{
+      min-height:28px;
+      padding:3px 9px;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:var(--panel-2);
+      color:var(--text);
+      font:inherit;
+      font-size:11px;
+      cursor:pointer;
+    }
+
+    .mini-setting-button:hover{
+      border-color:#98a2b3;
+      background:#f2f4f7;
+    }
+
+    .punctuation-details{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr)) auto;
+      align-items:end;
+      gap:14px;
+      padding:12px 16px 14px;
+      border-bottom:1px solid var(--line);
+      background:var(--panel-2);
+    }
+
+    .punctuation-details[hidden]{
+      display:none;
+    }
+
+    .punctuation-detail-item{
+      min-width:0;
+    }
+
+    .punctuation-detail-item label{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom:7px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:700;
+    }
+
+    .punctuation-detail-item strong{
+      color:var(--text);
+      white-space:nowrap;
+    }
+
+    .punctuation-detail-item input[type="range"]{
+      width:100%;
+      accent-color:#1570ef;
+      cursor:pointer;
+    }
+
+    .punctuation-reset-button{
+      min-height:36px;
+      padding:7px 12px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#fff;
+      color:var(--text);
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .punctuation-reset-button:hover{
+      background:#f2f4f7;
+    }
+
+    :root[data-theme="dark"] .mini-setting-button,
+    :root[data-theme="dark"] .punctuation-reset-button{
+      background:#182235;
+      border-color:#344054;
+      color:#f8fafc;
+    }
+
+    :root[data-theme="dark"] .mini-setting-button:hover,
+    :root[data-theme="dark"] .punctuation-reset-button:hover{
+      background:#243047;
+      border-color:#64748b;
+      color:#ffffff;
+    }
+
+    @media (max-width:900px){
+      .punctuation-details{
+        grid-template-columns:1fr;
+        align-items:stretch;
+      }
+
+      .punctuation-reset-button{
+        justify-self:start;
+      }
+    }
+  </style>
+<style id="punctuation-assist-toggle-styles">
+    .setting-disabled{
+      opacity:.48;
+    }
+
+    .setting-disabled select,
+    .setting-disabled button{
+      cursor:not-allowed;
+    }
+  </style>
+<style id="prompt-copy-styles">
+    .prompt-copy-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    #promptSelect{min-height:38px;max-width:280px;padding:7px 34px 7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel);color:var(--text);font-family:inherit;font-size:13px;font-weight:inherit;line-height:inherit}
+    #promptCopyButton{white-space:nowrap}
+    :root[data-theme="dark"] #promptSelect{background:#182235;border-color:#344054;color:#f8fafc}
+    :root[data-theme="dark"] #promptSelect:hover,:root[data-theme="dark"] #promptSelect:focus{border-color:#64748b;background:#243047;color:#fff}
+    @media (max-width:680px){.prompt-copy-group{width:100%;display:grid;grid-template-columns:1fr}#promptSelect,#promptCopyButton{width:100%;max-width:none}}
+  </style>
+<style id="final-responsive-action-layout">
+    /* 共通：通常操作とAI用操作を明確に分離 */
+    .main-toolbar{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      flex-wrap:wrap;
+    }
+
+    .main-toolbar #copyButton,
+    .main-toolbar #downloadButton{
+      order:3;
+    }
+
+    .main-toolbar #downloadButton{
+      order:4;
+    }
+
+    .main-toolbar #clearButton{
+      order:6;
+    }
+
+    .main-toolbar .spacer{
+      order:5;
+    }
+
+    .prompt-toolbar{
+      display:grid;
+      grid-template-columns:auto minmax(220px,320px) auto auto;
+      align-items:center;
+      justify-content:start;
+      gap:9px;
+      padding:11px 16px;
+      border-bottom:1px solid var(--line);
+      background:var(--panel-2);
+    }
+
+    .prompt-toolbar-label{
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    #promptSelect{
+      width:100%;
+      max-width:none;
+      min-width:0;
+      min-height:40px;
+      font-family:inherit;
+      font-size:13px;
+    }
+
+    #promptCopyButton,
+    #promptSaveButton{
+      min-height:40px;
+      white-space:nowrap;
+    }
+
+    :root[data-theme="dark"] .prompt-toolbar{
+      background:#111827;
+    }
+
+    /* タブレット */
+    @media (min-width:681px) and (max-width:1024px){
+      .main-toolbar{
+        display:grid;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+      }
+
+      .main-toolbar .primary-btn,
+      .main-toolbar .danger-btn,
+      .main-toolbar .tool-btn{
+        width:100%;
+        min-width:0;
+        font-size:12px;
+        padding-left:8px;
+        padding-right:8px;
+      }
+
+      .main-toolbar .spacer{
+        display:none;
+      }
+
+      .prompt-toolbar{
+        grid-template-columns:auto minmax(220px,300px);
+        justify-content:start;
+      }
+
+      .prompt-toolbar-label{
+        align-self:center;
+      }
+
+      #promptCopyButton,
+      #promptSaveButton{
+        width:100%;
+      }
+    }
+
+    /* スマートフォン */
+    @media (max-width:680px){
+      .app{
+        padding-bottom:calc(82px + env(safe-area-inset-bottom));
+      }
+
+      .main-toolbar{
+        position:static;
+        display:flex;
+        overflow:visible;
+        padding:8px 10px;
+      }
+
+      .main-toolbar #startButton,
+      .main-toolbar #stopButton,
+      .main-toolbar #copyButton,
+      .main-toolbar #downloadButton,
+      .main-toolbar .spacer{
+        display:none !important;
+      }
+
+      .main-toolbar #clearButton{
+        display:block;
+        width:100%;
+        min-height:40px;
+        font-size:12px;
+      }
+
+      .prompt-toolbar{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px;
+        padding:10px;
+      }
+
+      .prompt-toolbar-label{
+        grid-column:1 / -1;
+      }
+
+      #promptSelect{
+        grid-column:1 / -1;
+        min-height:42px;
+        font-size:13px;
+      }
+
+      #promptCopyButton,
+      #promptSaveButton{
+        width:100%;
+        min-width:0;
+        min-height:44px;
+        padding:6px 7px;
+        font-size:11px;
+        white-space:normal;
+        line-height:1.25;
+      }
+
+      .mobile-dock{
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:6px;
+      }
+
+      .mobile-dock button{
+        min-width:0;
+        padding-left:3px;
+        padding-right:3px;
+        font-size:11px;
+      }
+    }
+
+    /* 狭いスマートフォン */
+    @media (max-width:390px){
+      .prompt-toolbar{
+        grid-template-columns:1fr;
+      }
+
+      .prompt-toolbar-label,
+      #promptSelect,
+      #promptCopyButton,
+      #promptSaveButton{
+        grid-column:1;
+      }
+
+      #promptCopyButton,
+      #promptSaveButton{
+        min-height:42px;
+      }
+
+      .mobile-dock{
+        gap:4px;
+        padding-left:6px;
+        padding-right:6px;
+      }
+
+      .mobile-dock button{
+        font-size:10px;
+      }
+    }
+  </style>
+<style id="advanced-feature-styles">
+    .icon-action-btn{
+      width:40px;height:40px;display:inline-grid;place-items:center;
+      border:1px solid var(--line);border-radius:9px;background:var(--panel);
+      color:var(--text);font:inherit;font-size:22px;line-height:1;cursor:pointer
+    }
+    .icon-action-btn.is-favorite{background:#fff7d6;border-color:#eaaa08;color:#a15c00}
+    .compact-btn{min-height:40px;white-space:nowrap}
+
+    .utility-panel{border-bottom:1px solid var(--line);background:var(--panel)}
+    .utility-panel>summary{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:10px 16px;cursor:pointer;font-weight:800;color:var(--text);
+      list-style:none
+    }
+    .utility-panel>summary::-webkit-details-marker{display:none}
+    .utility-panel>summary::after{content:"＋";font-size:18px;color:var(--muted)}
+    .utility-panel[open]>summary::after{content:"−"}
+    .utility-summary-note{font-size:12px;font-weight:500;color:var(--muted);margin-left:auto}
+    .utility-grid{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+      padding:0 16px 14px
+    }
+    .utility-card{
+      min-width:0;padding:12px;border:1px solid var(--line);border-radius:12px;
+      background:var(--panel-2)
+    }
+    .utility-card h2{margin:0 0 10px;font-size:13px;color:var(--text)}
+    .utility-note{margin:8px 0 0;font-size:11px;line-height:1.5;color:var(--muted)}
+    .utility-actions,.marker-buttons,.search-row,.interval-row{
+      display:flex;align-items:center;gap:7px;flex-wrap:wrap
+    }
+    .small-action-btn{
+      min-height:34px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;
+      background:var(--panel);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer
+    }
+    .small-action-btn:disabled{opacity:.45;cursor:not-allowed}
+    .utility-switch{justify-content:space-between;width:100%}
+    .search-row input{
+      flex:1 1 140px;min-width:0;min-height:36px;padding:7px 9px;border:1px solid var(--line);
+      border-radius:8px;background:var(--panel);color:var(--text);font:inherit;font-size:13px
+    }
+    .interval-row select{
+      min-height:36px;padding:6px 28px 6px 8px;border:1px solid var(--line);border-radius:8px;
+      background:var(--panel);color:var(--text);font:inherit;font-size:12px
+    }
+    .mic-level-wrap{
+      height:14px;overflow:hidden;border:1px solid var(--line);border-radius:999px;
+      background:var(--panel)
+    }
+    .mic-level-bar{height:100%;width:0%;background:linear-gradient(90deg,#12b76a,#f79009,#f04438);transition:width .08s linear}
+
+    .custom-prompt-dialog{
+      width:min(720px,calc(100% - 24px));max-height:90vh;padding:0;border:0;border-radius:16px;
+      background:var(--panel);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.28)
+    }
+    .custom-prompt-dialog::backdrop{background:rgba(15,23,42,.58)}
+    .dialog-shell{margin:0}
+    .dialog-header{display:flex;justify-content:space-between;gap:16px;padding:17px 18px;border-bottom:1px solid var(--line)}
+    .dialog-header h2{margin:0;font-size:18px}.dialog-header p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+    .dialog-close{border:0;background:transparent;color:var(--text);font-size:25px;cursor:pointer}
+    .dialog-body{display:grid;gap:14px;padding:18px;max-height:calc(90vh - 85px);overflow:auto}
+    .dialog-body label{display:grid;gap:6px;font-size:13px;font-weight:800}
+    .dialog-body input,.dialog-body textarea{
+      width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid var(--line);border-radius:9px;
+      background:var(--panel-2);color:var(--text);font:inherit;font-size:13px;resize:vertical
+    }
+    .dialog-save{justify-self:start;min-height:40px}
+    .custom-prompt-list-wrap{border-top:1px solid var(--line);padding-top:13px}
+    .custom-prompt-list-wrap h3{margin:0 0 8px;font-size:14px}
+    .custom-prompt-list{display:grid;gap:7px}
+    .custom-prompt-item{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--panel-2)
+    }
+    .custom-prompt-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+    .custom-prompt-item button{border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--text);font:inherit;font-size:11px;padding:5px 8px;cursor:pointer}
+
+    :root[data-theme="dark"] .icon-action-btn,
+    :root[data-theme="dark"] .small-action-btn,
+        :root[data-theme="dark"] .search-row input,
+    :root[data-theme="dark"] .interval-row select{background:#182235;border-color:#344054;color:#fff}
+    :root[data-theme="dark"] .utility-card{background:#111827}
+    :root[data-theme="dark"] .icon-action-btn.is-favorite{background:#4b3909;color:#fde68a;border-color:#b7791f}
+
+    @media(max-width:1024px){.utility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){
+      .prompt-toolbar{grid-template-columns:1fr 1fr}
+      .prompt-toolbar-label,#promptSelect{grid-column:1/-1}
+      #promptFavoriteButton,#customPromptButton{width:100%;min-width:0}
+      .utility-summary-note{display:none}
+      .utility-grid{grid-template-columns:1fr;padding:0 10px 12px}
+      .utility-panel>summary{padding:10px}
+    }
+    @media(max-width:390px){
+      .prompt-toolbar{grid-template-columns:1fr}
+      #promptCopyButton,#promptSaveButton,#promptFavoriteButton,#customPromptButton{grid-column:1}
+    }
+  </style>
+<style id="refined-feature-layout">
+    .persistent-tools{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:10px 16px;
+      border-bottom:1px solid var(--line);
+      background:var(--panel);
+    }
+
+    .persistent-tools-group{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .persistent-autosave{
+      gap:8px;
+      white-space:nowrap;
+    }
+
+    .persistent-status{
+      min-width:0;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.4;
+    }
+
+    .persistent-tools-actions{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      flex-wrap:wrap;
+    }
+
+    .utility-grid{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    :root[data-theme="dark"] .persistent-tools{
+      background:#101827;
+    }
+
+    @media (max-width:800px){
+      .persistent-tools{
+        align-items:stretch;
+      }
+
+      .persistent-tools-group{
+        width:100%;
+        justify-content:space-between;
+      }
+
+      .persistent-tools-actions{
+        width:100%;
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+
+      .persistent-tools-actions .small-action-btn{
+        width:100%;
+        min-width:0;
+      }
+
+      .utility-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media (max-width:420px){
+      .persistent-tools{
+        padding:9px 10px;
+      }
+
+      .persistent-tools-group{
+        align-items:flex-start;
+        gap:8px;
+      }
+
+      .persistent-status{
+        text-align:right;
+        font-size:11px;
+      }
+
+      .persistent-tools-actions{
+        grid-template-columns:1fr 1fr;
+      }
+
+      #undoButton{
+        grid-column:1 / -1;
+      }
+    }
+  </style>
+<style id="clean-layout-v1">
+  .panel{
+    overflow:hidden;
+  }
+
+  .control-dashboard{
+    display:grid;
+    grid-template-columns:minmax(260px,1.15fr) minmax(250px,1fr) minmax(300px,1.2fr) minmax(235px,.9fr);
+    gap:0;
+    border-bottom:1px solid var(--line);
+    background:var(--panel);
+  }
+
+  .control-group{
+    min-width:0;
+    padding:14px 15px;
+    border-right:1px solid var(--line);
+  }
+
+  .control-group:last-child{
+    border-right:0;
+  }
+
+  .control-group-label{
+    margin-bottom:8px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.04em;
+  }
+
+  .control-buttons{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:8px;
+  }
+
+  .edit-buttons{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+
+  .control-buttons button{
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    padding:8px 10px;
+    white-space:nowrap;
+  }
+
+  .edit-buttons button{
+    font-size:12px;
+  }
+
+  .autosave-group{
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:center;
+    gap:7px 10px;
+  }
+
+  .autosave-header{
+    min-width:0;
+  }
+
+  .autosave-header .switch{
+    width:auto;
+    justify-content:flex-start;
+    gap:8px;
+    font-size:13px;
+    font-weight:800;
+  }
+
+  .persistent-status{
+    grid-column:1 / -1;
+    min-height:17px;
+    font-size:11px;
+    color:var(--muted);
+  }
+
+  .quiet-danger-btn{
+    grid-column:1 / -1;
+    justify-self:start;
+    min-height:30px !important;
+    padding:4px 8px !important;
+    border:0 !important;
+    background:transparent !important;
+    color:var(--muted) !important;
+    font-size:11px !important;
+    font-weight:700;
+  }
+
+  .quiet-danger-btn:hover{
+    color:#b42318 !important;
+    background:#fff1f0 !important;
+  }
+
+  .settings{
+    padding:10px 15px;
+    gap:9px;
+    border-bottom:1px solid var(--line);
+    background:var(--panel-2);
+  }
+
+  .setting{
+    min-height:39px;
+    border-radius:9px;
+    box-shadow:none;
+  }
+
+  .punctuation-details{
+    border-bottom:1px solid var(--line);
+  }
+
+  .ai-workflow-card{
+    margin:14px 15px;
+    border:1px solid var(--line);
+    border-radius:13px;
+    background:var(--panel-2);
+    overflow:hidden;
+  }
+
+  .ai-workflow-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:11px 13px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .ai-title-wrap{
+    min-width:0;
+  }
+
+  .ai-title-wrap h2{
+    margin:0;
+    font-size:14px;
+    color:var(--text);
+  }
+
+  .ai-title-wrap p{
+    margin:3px 0 0;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.4;
+  }
+
+  .ai-workflow-body{
+    display:grid;
+    grid-template-columns:minmax(260px,360px) minmax(320px,1fr);
+    gap:10px;
+    align-items:center;
+    padding:12px 13px;
+  }
+
+  .prompt-select-wrap{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 40px;
+    gap:7px;
+    min-width:0;
+  }
+
+  #promptSelect{
+    width:100%;
+    max-width:none;
+    min-height:42px;
+    font-size:13px;
+  }
+
+  #promptFavoriteButton{
+    width:40px;
+    height:42px;
+  }
+
+  .ai-workflow-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+
+  .ai-workflow-actions button{
+    width:100%;
+    min-width:0;
+    min-height:42px;
+    white-space:normal;
+    line-height:1.25;
+  }
+
+  .utility-panel{
+    margin:0 15px 14px;
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    background:var(--panel-2);
+  }
+
+  .utility-panel>summary{
+    padding:10px 12px;
+  }
+
+  .utility-grid{
+    padding:0 12px 12px;
+  }
+
+  :root[data-theme="dark"] .control-dashboard{
+    background:#111827;
+  }
+
+  :root[data-theme="dark"] .settings,
+  :root[data-theme="dark"] .ai-workflow-card,
+  :root[data-theme="dark"] .utility-panel{
+    background:#0f172a;
+  }
+
+  :root[data-theme="dark"] .quiet-danger-btn:hover{
+    color:#fda29b !important;
+    background:#3b1618 !important;
+  }
+
+  @media (max-width:1120px){
+    .control-dashboard{
+      grid-template-columns:1fr 1fr;
+    }
+
+    .control-group{
+      border-bottom:1px solid var(--line);
+    }
+
+    .control-group:nth-child(2){
+      border-right:0;
+    }
+
+    .control-group:nth-child(3),
+    .control-group:nth-child(4){
+      border-bottom:0;
+    }
+
+    .ai-workflow-body{
+      grid-template-columns:minmax(230px,320px) 1fr;
+    }
+  }
+
+  @media (max-width:760px){
+    .control-dashboard{
+      grid-template-columns:1fr;
+    }
+
+    .control-group{
+      border-right:0;
+      border-bottom:1px solid var(--line);
+      padding:11px 10px;
+    }
+
+    .control-group:last-child{
+      border-bottom:0;
+    }
+
+    .record-group,
+    .output-group{
+      display:none;
+    }
+
+    .edit-buttons{
+      grid-template-columns:repeat(3,minmax(0,1fr));
+    }
+
+    .autosave-group{
+      grid-template-columns:1fr auto;
+    }
+
+    .settings{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      padding:9px 10px;
+      overflow:visible;
+    }
+
+    .setting{
+      width:100%;
+      min-width:0;
+      justify-content:space-between;
+    }
+
+    .punctuation-setting{
+      grid-column:1 / -1;
+    }
+
+    .ai-workflow-card{
+      margin:10px;
+    }
+
+    .ai-workflow-header{
+      align-items:flex-start;
+      padding:10px;
+    }
+
+    .ai-title-wrap p{
+      display:none;
+    }
+
+    .ai-workflow-body{
+      grid-template-columns:1fr;
+      padding:10px;
+    }
+
+    .ai-workflow-actions{
+      grid-template-columns:1fr 1fr;
+    }
+
+    #customPromptButton{
+      min-height:36px;
+      font-size:11px;
+    }
+
+    .utility-panel{
+      margin:0 10px 10px;
+    }
+  }
+
+  @media (max-width:430px){
+    .edit-buttons{
+      grid-template-columns:1fr 1fr;
+    }
+
+    #clearButton{
+      grid-column:1 / -1;
+    }
+
+    .settings{
+      grid-template-columns:1fr;
+    }
+
+    .punctuation-setting{
+      grid-column:auto;
+    }
+
+    .ai-workflow-header{
+      display:grid;
+      grid-template-columns:1fr auto;
+    }
+
+    .ai-workflow-actions{
+      grid-template-columns:1fr;
+    }
+
+    .prompt-select-wrap{
+      grid-template-columns:minmax(0,1fr) 40px;
+    }
+
+    .mobile-dock{
+      grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    }
+  }
+</style>
+<style id="autosave-label-refinement">
+  .delete-data-btn{
+    min-height:34px !important;
+    padding:6px 10px !important;
+    border:1px solid var(--line) !important;
+    border-radius:8px !important;
+    background:var(--panel) !important;
+    color:var(--text) !important;
+    font:inherit !important;
+    font-size:12px !important;
+    font-weight:700 !important;
+    cursor:pointer;
+  }
+
+  .delete-data-btn:hover{
+    border-color:#d92d20 !important;
+    color:#b42318 !important;
+    background:#fff5f4 !important;
+  }
+
+  :root[data-theme="dark"] .delete-data-btn{
+    background:#182235 !important;
+    border-color:#344054 !important;
+    color:#fff !important;
+  }
+
+  :root[data-theme="dark"] .delete-data-btn:hover{
+    border-color:#f97066 !important;
+    color:#fda29b !important;
+    background:#3b1618 !important;
+  }
+</style>
+<style id="bridge-note-tagline-style">
+  .app-tagline,
+  .subtitle,
+  .tagline,
+  .lead{
+    margin:4px 0 0;
+    font-size:13px;
+    font-weight:600;
+    line-height:1.4;
+    color:var(--muted);
+    letter-spacing:.02em;
+  }
+
+  @media (max-width:680px){
+    .app-tagline,
+    .subtitle,
+    .tagline,
+    .lead{
+      margin-top:3px;
+      font-size:12px;
+    }
+  }
+</style>
+<style id="match-output-button-typography">
+  .match-output-button{
+    font-family:inherit !important;
+    font-size:13px !important;
+    font-weight:700 !important;
+    line-height:1.25 !important;
+  }
+</style>
+<style id="unified-action-button-typography">
+  /*
+    These six buttons intentionally share one typography rule.
+    This overrides older responsive rules that changed .tool-btn sizes.
+  */
+  #copyButton,
+  #downloadButton,
+  #undoButton,
+  #restoreDraftButton,
+  #clearButton,
+  #deleteDraftButton{
+    font-family:inherit !important;
+    font-size:13px !important;
+    font-weight:700 !important;
+    line-height:1.25 !important;
+  }
+</style>
+<style id="final-responsive-verification-fixes">
+  /* 縦向きタブレットではAI操作を上下に分け、文字切れを防ぐ */
+  @media (min-width:681px) and (max-width:900px){
+    .ai-workflow-body{
+      grid-template-columns:1fr !important;
+    }
+
+    .prompt-select-wrap{
+      width:min(100%,420px);
+    }
+
+    .ai-workflow-actions{
+      grid-template-columns:1fr 1fr !important;
+    }
+
+    #promptCopyButton,
+    #promptSaveButton{
+      min-width:0;
+      white-space:normal !important;
+      line-height:1.25;
+    }
+  }
+
+  /* スマートフォンでは編集操作を2列＋全幅1列に整理 */
+  @media (max-width:680px){
+    .edit-buttons{
+      grid-template-columns:1fr 1fr !important;
+    }
+
+    #undoButton,
+    #restoreDraftButton{
+      grid-column:auto !important;
+      width:100%;
+    }
+
+    #clearButton{
+      grid-column:1 / -1 !important;
+      width:100%;
+    }
+  }
+</style>
+<style id="final-mobile-ai-card-fix">
+  @media (max-width:430px){
+    .ai-workflow-header{
+      display:grid !important;
+      grid-template-columns:minmax(0,1fr) auto !important;
+      align-items:center !important;
+    }
+
+    #customPromptButton{
+      width:auto !important;
+      min-width:0 !important;
+      padding-left:10px !important;
+      padding-right:10px !important;
+      white-space:nowrap !important;
+    }
+
+    .prompt-select-wrap{
+      display:grid !important;
+      grid-template-columns:minmax(0,1fr) 40px !important;
+      gap:7px !important;
+    }
+
+    #promptSelect{
+      grid-column:1 !important;
+    }
+
+    #promptFavoriteButton{
+      grid-column:2 !important;
+      width:40px !important;
+      min-width:40px !important;
+    }
+  }
+</style>
+<style id="final-mobile-prompt-actions-fix">
+  @media (max-width:430px){
+    .ai-workflow-actions{
+      grid-template-columns:1fr 1fr !important;
+    }
+
+    #promptCopyButton,
+    #promptSaveButton{
+      min-height:48px !important;
+      padding:6px 5px !important;
+      white-space:normal !important;
+      line-height:1.2 !important;
+    }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+<header class="header">
+<div class="title-wrap">
+<div class="mobile-title-block">
+<h1>Voice Note for AI</h1>
+<p class="app-tagline">― AIへ橋渡しするための音声入力アプリ ―</p>
+<div class="mobile-credit">©2026 Takayuki WAYAMA</div></div>
+</div>
+<div class="header-actions">
+<button class="tool-btn" id="themeButton" type="button">ダーク表示</button>
+<button aria-pressed="false" class="tool-btn" id="wakeButton" type="button">画面スリープ無効化</button>
+</div>
+</header>
+<section class="panel"><div class="control-dashboard"><section class="control-group record-group"><div class="control-group-label">音声入力</div><div class="control-buttons"><button class="primary-btn" id="startButton" type="button">音声入力開始</button><button class="danger-btn" disabled="" id="stopButton" type="button">停止</button></div></section><section class="control-group output-group"><div class="control-group-label">コピー・保存</div><div class="control-buttons"><button class="tool-btn" id="copyButton" type="button">全文コピー</button><button class="tool-btn" id="downloadButton" type="button">テキスト保存</button></div></section><section class="control-group edit-group"><div class="control-group-label">編集</div><div class="control-buttons edit-buttons"><button class="small-action-btn match-output-button" disabled="" id="undoButton" type="button">元に戻す</button><button class="small-action-btn match-output-button" id="restoreDraftButton" type="button">復元</button><button class="tool-btn match-output-button" id="clearButton" type="button">全文クリア</button></div></section><section class="control-group autosave-group"><div class="autosave-header"><label class="switch persistent-autosave">
+<span>自動保存</span>
+<input checked="" id="autosaveToggle" type="checkbox"/>
+<span class="switch-ui"></span>
+</label></div><span class="persistent-status" id="draftStatus">保存状況を確認中</span><button class="small-action-btn delete-data-btn match-output-button" id="deleteDraftButton" type="button">保存データを削除</button></section></div><div class="settings">
+<div class="setting">
+<span>文字サイズ</span>
+<select id="fontSizeSelect">
+<option value="18">小</option>
+<option selected="" value="22">標準</option>
+<option value="28">大</option>
+<option value="34">特大</option>
+</select>
+</div>
+<div class="setting">
+<label class="switch">
+<span>句点補助</span>
+<input checked="" id="punctuationAssistToggle" type="checkbox"/>
+<span class="switch-ui"></span>
+</label>
+</div>
+<div class="setting punctuation-setting" id="punctuationSpeedSetting">
+<span>句点の速さ</span>
+<select aria-label="句点の速さ" id="punctuationPreset">
+<option value="fast">早め</option>
+<option selected="" value="standard">標準</option>
+<option value="slow">ゆっくり</option>
+<option value="custom">カスタム</option>
+</select>
+<button aria-expanded="false" class="mini-setting-button" id="punctuationDetailsButton" type="button">
+            詳細
+          </button>
+</div>
+<div class="setting">
+<label class="switch">
+<span>自動スクロール</span>
+<input checked="" id="autoScrollToggle" type="checkbox"/>
+<span class="switch-ui"></span>
+</label>
+</div>
+</div><div class="punctuation-details" hidden="" id="punctuationDetails">
+<div class="punctuation-detail-item">
+<label for="sentenceEndDelay">
+<span>言い切ったとき</span>
+<strong><output id="sentenceEndDelayValue">0.45</output>秒</strong>
+</label>
+<input id="sentenceEndDelay" max="1.20" min="0.20" step="0.05" type="range" value="0.45"/>
+</div>
+<div class="punctuation-detail-item">
+<label for="neutralDelay">
+<span>どちらとも言えないとき</span>
+<strong><output id="neutralDelayValue">0.70</output>秒</strong>
+</label>
+<input id="neutralDelay" max="1.50" min="0.30" step="0.05" type="range" value="0.70"/>
+</div>
+<div class="punctuation-detail-item">
+<label for="continuationDelay">
+<span>まだ続きそうなとき</span>
+<strong><output id="continuationDelayValue">1.00</output>秒</strong>
+</label>
+<input id="continuationDelay" max="2.00" min="0.50" step="0.05" type="range" value="1.00"/>
+</div>
+<button class="punctuation-reset-button" id="punctuationResetButton" type="button">
+          標準に戻す
+        </button>
+</div><section class="ai-workflow-card"><div class="ai-workflow-header"><div class="ai-title-wrap"><h2>AI用プロンプト</h2><p>用途を選び、音声入力した文章と一緒にコピーまたは保存</p></div><button class="tool-btn compact-btn" id="customPromptButton" type="button">独自プロンプト</button></div><div class="ai-workflow-body"><div class="prompt-select-wrap"><select aria-label="使用するプロンプト" id="promptSelect">
+<option value="">プロンプトを選択</option><option value="p2">内容を保ったまま読みやすく整える</option><option value="p3">要約</option><option value="p4">超要約</option><option value="p5">議事録</option><option value="p6">決定事項・行動事項の抽出</option><option value="p7">授業記録</option><option value="p8">児童の発言・反応の抽出</option><option value="p9">研修記録</option><option value="p10">研修の学び・実践案の抽出</option><option value="p11">報告書</option><option value="p12">出張・視察報告</option><option value="p13">研究協議記録</option><option value="p14">面談・相談記録</option><option value="p15">実践の振り返り</option><option value="p16">記事・実践紹介</option><option value="p17">連絡文・周知文</option><option value="p18">引継ぎ記録</option><option value="p19">トラブル・事故対応記録</option><option value="p20">FAQ・想定問答</option><option value="p21">提案書・企画案の土台</option><option value="p22">汎用プロンプト</option>
+</select><button aria-label="選択中のプロンプトをお気に入りに登録" class="icon-action-btn" id="promptFavoriteButton" title="お気に入り" type="button">☆</button></div><div class="ai-workflow-actions"><button class="tool-btn" id="promptCopyButton" type="button">プロンプト＋全文コピー</button><button class="tool-btn" id="promptSaveButton" type="button">プロンプト＋テキスト保存</button></div></div></section><details class="utility-panel">
+<summary>
+<span>補助機能</span>
+<span class="utility-summary-note">検索・時間区切り・入力レベル</span>
+</summary>
+<div class="utility-grid">
+<section class="utility-card search-card">
+<h2>文字検索</h2>
+<div class="search-row">
+<input aria-label="音声入力した文章を検索" id="transcriptSearchInput" placeholder="本文を検索" type="search"/>
+<button class="small-action-btn" id="searchPreviousButton" type="button">前へ</button>
+<button class="small-action-btn" id="searchNextButton" type="button">次へ</button>
+</div>
+<p class="utility-note" id="searchStatus">検索語を入力してください</p>
+</section>
+<section class="utility-card">
+<h2>経過時間の区切り</h2>
+<div class="interval-row">
+<label class="switch utility-switch">
+<span>本文へ自動挿入</span>
+<input id="intervalMarkerToggle" type="checkbox"/>
+<span class="switch-ui"></span>
+</label>
+<select aria-label="経過時間の間隔" id="intervalMarkerMinutes">
+<option value="5">5分</option>
+<option selected="" value="10">10分</option>
+<option value="15">15分</option>
+<option value="30">30分</option>
+</select>
+</div>
+<p class="utility-note">例：【経過10分】。初期設定はOFFです。</p>
+</section>
+<section class="utility-card mic-level-card">
+<h2>マイク入力レベル</h2>
+<div aria-label="マイク入力レベル" class="mic-level-wrap">
+<div class="mic-level-bar" id="micLevelBar"></div>
+</div>
+<p class="utility-note" id="micLevelText">停止中</p>
+</section>
+</div>
+</details>
+<div class="statusbar">
+<div class="status-left">
+<span class="status-dot" id="statusDot"></span>
+<span id="statusText">待機中</span>
+</div>
+<div class="metrics">
+<span class="metric">文字数<strong id="characterCount">0</strong></span>
+<span class="metric">行数<strong id="lineCount">0</strong></span>
+<span class="metric">時間<strong id="elapsedTime">00:00</strong></span>
+</div>
+</div>
+<div class="mic-notice" hidden="" id="micNotice">
+        マイクがオフになっています。ブラウザまたは端末の設定で、マイクの使用を許可してください。
+      </div>
+<div class="editor-wrap">
+<div class="editor-box">
+<textarea id="transcript" placeholder="音声入力を開始すると、ここに文章が表示されます。"></textarea>
+<div aria-live="polite" class="interim" id="interimText"></div>
+</div>
+</div>
+</section>
+<div class="credit">©2026 Takayuki WAYAMA</div></main>
+<div class="mobile-dock">
+<button class="primary-btn" id="mobileStartButton" type="button">開始</button>
+<button class="danger-btn" disabled="" id="mobileStopButton" type="button">停止</button>
+<button class="tool-btn" id="mobileCopyButton" type="button">コピー</button>
+<button class="tool-btn" id="mobileSaveButton" type="button">保存</button>
+</div>
+<dialog class="custom-prompt-dialog" id="customPromptDialog">
+<form class="dialog-shell" method="dialog">
+<div class="dialog-header">
+<div>
+<h2>独自プロンプト</h2>
+<p>この端末のブラウザ内だけに保存されます。</p>
+</div>
+<button aria-label="閉じる" class="dialog-close" id="closeCustomPromptButton" value="cancel">×</button>
+</div>
+<div class="dialog-body">
+<label>
+<span>プロンプト名</span>
+<input id="customPromptTitle" maxlength="40" placeholder="例：校内会議用議事録" type="text"/>
+</label>
+<label>
+<span>プロンプト本文</span>
+<textarea id="customPromptBody" placeholder="AIへ渡す指示を入力してください。" rows="12"></textarea>
+</label>
+<button class="primary-btn dialog-save" id="saveCustomPromptButton" type="button">登録</button>
+<div class="custom-prompt-list-wrap">
+<h3>登録済み</h3>
+<div class="custom-prompt-list" id="customPromptList"></div>
+</div>
+</div>
+</form>
+</dialog>
+<div aria-live="polite" class="toast" id="toast" role="status"></div>
+<script>
+    (() => {
+      "use strict";
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const $ = id => document.getElementById(id);
+
+      const transcript = $("transcript");
+      const interimText = $("interimText");
+      const startButtons = [$("startButton"), $("mobileStartButton")];
+      const stopButtons = [$("stopButton"), $("mobileStopButton")];
+      const copyButtons = [$("copyButton"), $("mobileCopyButton")];
+      const downloadButton = $("downloadButton");
+      const mobileSaveButton = $("mobileSaveButton");
+      const clearButton = $("clearButton");
+      const wakeButton = $("wakeButton");
+      const themeButton = $("themeButton");
+      const fontSizeSelect = $("fontSizeSelect");
+      const punctuationAssistToggle = $("punctuationAssistToggle");
+      const punctuationSpeedSetting = $("punctuationSpeedSetting");
+      const punctuationPreset = $("punctuationPreset");
+      const punctuationDetailsButton = $("punctuationDetailsButton");
+      const punctuationDetails = $("punctuationDetails");
+      const sentenceEndDelayInput = $("sentenceEndDelay");
+      const neutralDelayInput = $("neutralDelay");
+      const continuationDelayInput = $("continuationDelay");
+      const sentenceEndDelayValue = $("sentenceEndDelayValue");
+      const neutralDelayValue = $("neutralDelayValue");
+      const continuationDelayValue = $("continuationDelayValue");
+      const punctuationResetButton = $("punctuationResetButton");
+      const autoScrollToggle = $("autoScrollToggle");
+      const statusText = $("statusText");
+      const statusDot = $("statusDot");
+      const characterCount = $("characterCount");
+      const lineCount = $("lineCount");
+      const elapsedTime = $("elapsedTime");
+      const toast = $("toast");
+      const micNotice = $("micNotice");
+      const autosaveToggle = $("autosaveToggle");
+      const restoreDraftButton = $("restoreDraftButton");
+      const deleteDraftButton = $("deleteDraftButton");
+      const draftStatus = $("draftStatus");
+      const undoButton = $("undoButton");
+      const transcriptSearchInput = $("transcriptSearchInput");
+      const searchPreviousButton = $("searchPreviousButton");
+      const searchNextButton = $("searchNextButton");
+      const searchStatus = $("searchStatus");
+      const intervalMarkerToggle = $("intervalMarkerToggle");
+      const intervalMarkerMinutes = $("intervalMarkerMinutes");
+      const micLevelBar = $("micLevelBar");
+      const micLevelText = $("micLevelText");
+      const promptFavoriteButton = $("promptFavoriteButton");
+      const customPromptButton = $("customPromptButton");
+      const customPromptDialog = $("customPromptDialog");
+      const customPromptTitle = $("customPromptTitle");
+      const customPromptBody = $("customPromptBody");
+      const saveCustomPromptButton = $("saveCustomPromptButton");
+      const customPromptList = $("customPromptList");
+      const promptSelect = $("promptSelect");
+      const promptCopyButton = $("promptCopyButton");
+      const promptSaveButton = $("promptSaveButton");
+
+      const promptTemplates = {"p2": "内容を保ったまま読みやすく整える\n\n以下は、リアルタイム音声入力で文字起こしした文章です。\n\n音声認識による誤字脱字、変換ミス、助詞や語尾の欠落、言い直し、重複、言いよどみ、句読点不足などが含まれている可能性があります。\n\n次の条件に従って、元の内容をできるだけ残したまま、読みやすい文章へ整えてください。\n\n【作業の目的】\n\n内容を短くまとめるのではなく、元の文字起こしを生かしながら、意味が自然に伝わる文章へ修正すること。\n\n【重要な方針】\n\n・これは要約ではありません。\n・内容を省略しすぎないでください。\n・発言の内容や意味を勝手に変えないでください。\n・文字起こしにない情報を追加しないでください。\n・明らかな誤字脱字や変換ミスは、前後の文脈から修正してください。\n・助詞や語尾は、意味を自然にするために必要な最小限だけ補ってください。\n・同じ言葉の繰り返し、言い直し、不要な言いよどみは整理してください。\n・話し言葉の雰囲気は、内容に応じて適度に残してください。\n・発言の順番や話題の流れは、意味が変わらない範囲で保ってください。\n・不明な部分は、無理に補わず「（不明）」または「（聞き取り不明）」としてください。\n\n【構成・見出し】\n\n・文章全体を読み、最も分かりやすい構成をAIが判断してください。\n・話題が複数ある場合は、内容に合う簡潔な見出しを付けてください。\n・一つの話題を細かく分けすぎないでください。\n・文字起こしにない内容を見出しとして作らないでください。\n・短い文章の場合は、無理に見出しを付けなくても構いません。\n\n【出力】\n\n元の内容を保ちながら、読みやすく整えた文章だけを出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p3": "要約\n\n以下は、リアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、内容の要点が短時間で把握できる要約を作成してください。\n\n【作業の目的】\n\n元の内容の重要な部分を残しながら、重複や枝葉の情報を整理し、読み手が全体像を短時間で理解できる要約にすること。\n\n【重要な方針】\n\n・文字起こしにない事実、意見、結論を追加しないでください。\n・重要な条件、例外、数値、期限、担当者、固有名詞は落とさないでください。\n・決定事項と、意見や提案として出ただけの内容を区別してください。\n・元の発言の趣旨を変えないでください。\n・不明な部分は推測せず「（要確認）」としてください。\n・細かな言い回しよりも、内容の核を優先してください。\n・要約しすぎて、背景や判断の経緯が分からなくならないようにしてください。\n\n【構成】\n\n・内容を読み取り、最も分かりやすい要約の構成をAIが判断してください。\n・必要に応じて、見出しや箇条書きを使用してください。\n・見出しの名称や数は固定しません。\n・情報量が少ない場合は、短い文章としてまとめてください。\n・情報量が多い場合は、話題ごとに整理してください。\n\n【出力】\n\n最初に全体の要約を示し、その後、必要に応じて重要事項を整理してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p4": "超要約\n\n## 30秒で把握するための要約\n\n以下の文字起こしを、30秒程度で内容を把握できる長さに要約してください。\n\n【条件】\n\n・最も重要な内容だけを残してください。\n・結論、決定事項、今後することを優先してください。\n・重要な期限、担当者、数値がある場合は残してください。\n・文字起こしにない内容は追加しないでください。\n・不明な点は「（要確認）」としてください。\n・3～7項目程度を目安に、必要に応じて箇条書きで整理してください。\n・前置きは不要です。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p5": "議事録\n\n以下は、会議中にリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、欠席者が読んでも、会議の内容、決まったこと、今後の行動が分かる議事録へ整えてください。\n\n【作業の目的】\n\n会議の内容を正確に整理し、参加していない人にも、話し合いの経緯、決定事項、今後の対応が伝わる記録にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・文字起こしにない事実、意見、結論を追加しないでください。\n・発言を単に時系列で並べるのではなく、話題ごとに整理してください。\n・決定事項、提案、意見、検討中の内容を区別してください。\n・担当者や期限が明確でない場合は推測しないでください。\n・重要な少数意見、懸念事項、保留事項も必要に応じて残してください。\n・重複した発言は統合してください。\n・簡潔にしすぎて、判断の経緯が分からなくならないようにしてください。\n・日時、氏名、場所、数値、担当者、期限は特に慎重に扱ってください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・会議内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・議題、協議内容、決定事項、今後の対応などが含まれる場合は、自然に整理してください。\n・見出しの名称や数は固定しません。\n・内容が少ない場合は、無理に項目を増やさないでください。\n・発言者が明確な場合のみ、必要に応じて発言者を示してください。\n・発言者が不明な場合は、無理に名前を付けないでください。\n\n【出力】\n\nそのまま職員間で共有できる議事録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p6": "決定事項・行動事項の抽出\n\n以下の文字起こしから、会議や打合せで決まったことと、今後行うことを抽出してください。\n\n【抽出する内容】\n\n・決定事項\n・今後行うこと\n・担当者\n・期限\n・保留事項\n・確認が必要なこと\n\n【重要な方針】\n\n・文字起こしに明確に書かれている内容だけを抽出してください。\n・提案や意見を、決定事項として扱わないでください。\n・担当者や期限が不明な場合は「未定」または「要確認」としてください。\n・同じ内容は統合してください。\n・重要な条件や例外を落とさないでください。\n・該当する内容がない項目は、無理に作らないでください。\n\n【出力】\n\n最も分かりやすい形式で整理してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p7": "授業記録\n\n以下は、授業中または授業直後にリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、授業改善に活用できる授業記録へ整えてください。\n\n【作業の目的】\n\n授業の流れ、教師の働きかけ、児童の反応、つまずき、変容、成果、課題が伝わり、次の授業改善につながる記録にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・授業中に確認できた事実と、授業者の考察や感想を区別してください。\n・文字起こしにない児童の反応、学習成果、授業者の意図を追加しないでください。\n・教師の発言、児童の発言、観察した事実が分かる場合は、区別して整理してください。\n・児童の発言は、意味を変えずに読みやすく整えてください。\n・児童の個人名は、必要に応じて「児童A」などに置き換えてください。\n・授業を実際以上によく見せたり、過度に肯定的に表現したりしないでください。\n・うまくいかなかった点も、改善につながる記録として残してください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・授業内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・授業の流れ、教師の働きかけ、児童の反応、成果、課題、次時に生かすことなどが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・授業の事実と考察を、必要に応じて分けてください。\n・一つの発言や場面を細かく分けすぎないでください。\n\n【出力】\n\n授業改善に活用できる授業記録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p8": "児童の発言・反応の抽出\n\n以下の文字起こしから、児童の発言、反応、つまずき、変化が分かる部分を抽出して整理してください。\n\n【重要な方針】\n\n・文字起こしに実際に含まれている内容だけを扱ってください。\n・児童の発言の意味を変えないでください。\n・教師の推測と、実際に確認された児童の様子を区別してください。\n・同じ児童の発言が複数ある場合は、変化が分かるように整理してください。\n・個人名は「児童A」などに置き換えてください。\n・不明な部分は「（要確認）」としてください。\n\n【構成】\n\n児童の姿が最も分かりやすく伝わる構成をAIが判断してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p9": "研修記録\n\n以下は、研修中または研修後にリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、参加していない職員にも内容と実践へのつながりが伝わる研修記録へ整えてください。\n\n【作業の目的】\n\n研修で扱われた内容、重要な考え、協議や演習、参加者の気付き、今後の実践へのつながりが分かる記録にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・講師の説明、参加者の意見、話し手自身の感想や考察を、分かる範囲で区別してください。\n・文字起こしにない研修内容、講師の主張、資料の内容を追加しないでください。\n・専門用語は、文字起こしの内容から意味が分かる場合のみ、読みやすく整えてください。\n・研修を過度に肯定的に表現したり、成果を誇張したりしないでください。\n・校内で生かせる内容が発言されている場合は、分かりやすく整理してください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・研修内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・研修の主な内容、重要なポイント、協議、演習、気付き、今後に生かせることなどが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・研修の流れが分かる場合は、その流れを生かしてください。\n・一つの内容を細かく分けすぎないでください。\n\n【出力】\n\n校内で共有できる研修記録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p10": "研修の学び・実践案の抽出\n\n以下の文字起こしから、研修で得られた学びと、今後の実践に生かせる内容を抽出してください。\n\n【抽出する内容】\n\n・重要な学び\n・印象に残った考え\n・校内で共有したいこと\n・自分の実践に生かせること\n・今後試したいこと\n・注意点や課題\n\n【重要な方針】\n\n・文字起こしにない実践案を勝手に作らないでください。\n・講師の説明と、参加者の考えを区別してください。\n・抽象的な感想だけでなく、具体的な行動につながる内容があれば残してください。\n・不明な部分は「（要確認）」としてください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p11": "報告書\n\n以下は、実施した取組、行事、出張、研修、対応などについて、リアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、管理職や関係者へ提出できる報告書へ整えてください。\n\n【作業の目的】\n\n実施した内容、結果、成果、課題、今後の対応を、正確かつ客観的に伝える報告書にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・文字起こしにない事実、成果、評価、数値、今後の方針を追加しないでください。\n・事実、評価、考察、今後の対応を混同しないでください。\n・日時、場所、人数、氏名、数値、担当者、期限は特に慎重に扱ってください。\n・文体は常体を基本としてください。\n・客観的で簡潔な表現にしてください。\n・話し言葉は、提出文書として自然な表現へ修正してください。\n・過度な美化や断定を避けてください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・報告内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・目的、実施内容、結果、成果、課題、今後の対応などが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・内容が少ない場合は、無理に多くの項目へ分けないでください。\n・内容が多い場合は、読み手が把握しやすいよう適切に区切ってください。\n\n【出力】\n\nそのまま提出できる報告書として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p12": "出張・視察報告\n\n以下は、出張、視察、研究会、説明会などについて話した内容を文字起こしした文章です。\n\n次の条件に従って、職員間で共有できる出張・視察報告へ整えてください。\n\n【重要な方針】\n\n・参加した内容、得られた情報、学校に関係する点を整理してください。\n・文字起こしにない内容を追加しないでください。\n・単なる感想ではなく、共有する価値のある情報を分かりやすく残してください。\n・学校で生かせる内容がある場合は、文字起こしの範囲で整理してください。\n・事実と個人の感想を区別してください。\n・不明な部分は「（要確認）」としてください。\n\n【構成】\n\n内容を読み取り、最も伝わりやすい構成をAIが判断してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p13": "研究協議記録\n\n以下は、授業研究や研究協議をリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、研究協議記録へ整えてください。\n\n【作業の目的】\n\n児童の事実、授業の成果と課題、協議で出た意見、指導助言、今後の研究に生かす点が分かる記録にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・感想、観察した事実、分析、提案を区別してください。\n・文字起こしにない児童の姿、成果、理論、授業者の意図を追加しないでください。\n・研究主題や授業のねらいが文字起こしに含まれる場合は、それを生かしてください。\n・授業者への批判だけにならないよう、改善につながる表現にしてください。\n・少数意見や異なる見方も、必要に応じて残してください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・研究協議の内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・児童の事実、成果、課題、協議で出た意見、指導助言、今後の研究に生かすことなどが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・文字起こしにない内容を見出しとして作らないでください。\n\n【出力】\n\n校内研究や授業研究で共有できる研究協議記録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p14": "面談・相談記録\n\n以下は、面談や相談の内容をリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、確認や引継ぎに使用できる面談・相談記録へ整えてください。\n\n【作業の目的】\n\n相談内容、確認した事実、相手の意向、説明した内容、合意したこと、今後の対応が正確に分かる記録にすること。\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・事実、相手の発言、学校側の説明、推測を混同しないでください。\n・相手が同意していない内容を、合意事項として扱わないでください。\n・文字起こしにない背景事情や意図を追加しないでください。\n・感情的な表現は、意味を変えない範囲で客観的に整えてください。\n・個人情報は、記録に必要な範囲だけ残してください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・内容を読み取り、最も分かりやすい構成をAIが判断してください。\n・相談内容、確認事項、相手の意向、説明内容、合意事項、今後の対応などが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・文字起こしにない内容を見出しとして作らないでください。\n\n【出力】\n\n確認や引継ぎに使用できる面談・相談記録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p15": "実践の振り返り\n\n以下は、実践後に考えたことをリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、実践の振り返りとして整えてください。\n\n【作業の目的】\n\n実践したこと、感じたこと、成果、課題、次に改善したいことが自然に伝わる文章にすること。\n\n【重要な方針】\n\n・話し手本人の言葉や問題意識をできるだけ残してください。\n・元の内容を過度に一般化したり、立派な表現へ作り替えたりしないでください。\n・事実と考察を区別してください。\n・文字起こしにない成果、原因、課題を追加しないでください。\n・単なる感想で終わらず、文字起こしに含まれる範囲で次の行動につなげてください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・内容を読み取り、最も自然で分かりやすい構成をAIが判断してください。\n・実践内容、成果、課題、原因、次に生かすことなどが含まれる場合は、内容に応じて整理してください。\n・短い内容であれば、無理に見出しを多く付けないでください。\n\n【出力】\n\n実践記録または振り返りとして自然な文章を出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p16": "記事・実践紹介\n\n以下は、実践や取組について話した内容をリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、教職員向けの記事または実践紹介へ整えてください。\n\n【作業の目的】\n\n取組の背景、実際に行ったこと、感じた効果、課題、今後の展望が、読み手に自然に伝わる記事にすること。\n\n【重要な方針】\n\n・話し手本人の考えや言葉をできるだけ残してください。\n・文字起こしにない効果、成果、事例を追加しないでください。\n・過度に宣伝的、断定的、成功談的な文章にしないでください。\n・単なる機能紹介ではなく、仕事や実践がどのように変わったかが分かるようにしてください。\n・読み手が自分の実践に置き換えて考えられる文章にしてください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・内容を読み取り、記事として最も読みやすい構成をAIが判断してください。\n・導入、背景、実践内容、効果、課題、今後などが含まれる場合は、内容に応じて整理してください。\n・見出しの名称や数は固定しません。\n・文字起こしにない内容を見出しや本文として追加しないでください。\n\n【出力】\n\n見出しを付けた記事として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p17": "連絡文・周知文\n\n以下は、連絡したい内容をリアルタイム音声入力で文字起こしした文章です。\n\n次の条件に従って、指定した相手や媒体に合う連絡文へ整えてください。\n\n【送り先】\n\n（例：教職員、保護者、関係機関）\n\n【媒体】\n\n（例：LINE、メール、校内通知、文書）\n\n【重要な方針】\n\n・元の文字起こしにない予定、条件、期限、依頼事項を追加しないでください。\n・最も重要な連絡事項が最初に伝わる文章にしてください。\n・日時、場所、対象、期限、持ち物、対応事項を、文字起こしにある範囲で明確にしてください。\n・丁寧だが回りくどくない表現にしてください。\n・媒体に応じて、文章の長さや文体を調整してください。\n・不明な部分は「（要確認）」としてください。\n\n【構成】\n\n・文章の順序や構成は、AIが最も伝わりやすい形に整えてください。\n・意味や条件を変えない範囲で、文字起こしの順番を並べ替えて構いません。\n\n【出力】\n\n指定した媒体へそのまま貼り付けられる文章だけを出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p18": "引継ぎ記録\n\n以下は、業務や対応について引き継ぎたい内容を文字起こしした文章です。\n\n次の条件に従って、次の担当者が迷わず対応できる引継ぎ記録へ整えてください。\n\n【重要な方針】\n\n・現在の状況、これまでの経緯、対応済みのこと、未対応のこと、次に行うことを整理してください。\n・文字起こしにない情報を追加しないでください。\n・担当者、期限、連絡先、注意点が含まれる場合は、正確に残してください。\n・事実と推測を区別してください。\n・不明な部分は「（要確認）」としてください。\n・重要な注意事項を埋もれさせないでください。\n\n【構成】\n\n内容を読み取り、次の担当者が理解しやすい構成をAIが判断してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p19": "トラブル・事故対応記録\n\n以下は、トラブル、事故、けが、苦情、緊急対応などについて文字起こしした文章です。\n\n次の条件に従って、事実確認と引継ぎに使用できる記録へ整えてください。\n\n【重要な方針】\n\n・確認された事実、関係者の発言、対応内容、推測を明確に分けてください。\n・時系列が分かる場合は、正確に整理してください。\n・文字起こしにない原因や責任を推測しないでください。\n・感情的、断定的、評価的な表現を避けてください。\n・日時、場所、関係者、対応者、連絡内容を慎重に扱ってください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n・個人情報は、記録に必要な範囲で扱ってください。\n\n【構成】\n\n内容を読み取り、事実関係が最も分かりやすい構成をAIが判断してください。\n\n【出力】\n\n確認や引継ぎに使用できる客観的な記録として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p20": "FAQ・想定問答\n\n以下の文字起こしをもとに、内容を理解するためのFAQまたは想定問答を作成してください。\n\n【重要な方針】\n\n・文字起こしに含まれている内容だけを使ってください。\n・回答が文字起こしから確認できない質問は作らないでください。\n・回答を推測して補わないでください。\n・同じ内容の質問は統合してください。\n・読み手が疑問に思いそうな点を、文字起こしの範囲で整理してください。\n・不明な部分は「（要確認）」としてください。\n\n【構成】\n\n質問と回答の数や順番は、内容に応じてAIが判断してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p21": "提案書・企画案の土台\n\n以下は、考えている提案や企画について話した内容を文字起こしした文章です。\n\n次の条件に従って、提案書または企画案の土台へ整えてください。\n\n【重要な方針】\n\n・文字起こしに含まれる考え、目的、課題、方法、期待する効果を整理してください。\n・文字起こしにない根拠、数値、成果、予算、予定を追加しないでください。\n・実現が決まっていない内容を、決定事項として表現しないでください。\n・曖昧な部分は「（要検討）」または「（要確認）」としてください。\n・話し手の問題意識や提案の意図をできるだけ残してください。\n\n【構成】\n\n内容を読み取り、提案として最も伝わりやすい構成をAIが判断してください。\n\n【出力】\n\n検討用の提案書または企画案の土台として出力してください。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）\n\n---", "p22": "汎用プロンプト\n\n以下は、リアルタイム音声入力で文字起こしした文章です。\n\n音声認識による誤字脱字、変換ミス、助詞や語尾の欠落、言い直し、重複、言いよどみ、句読点不足などが含まれている可能性があります。\n\n次の条件に従って、指定した用途に合う文章へ整えてください。\n\n【用途】\n\n（例：議事録、授業記録、研修記録、報告書、要約、記事、振り返り）\n\n【読み手】\n\n（例：教職員、管理職、保護者、関係機関、一般向け）\n\n【文体】\n\n（例：敬体、常体、自然な話し言葉）\n\n【長さ】\n\n（例：元の内容をできるだけ残す、標準、簡潔に）\n\n【必ず残したい内容】\n\n（ここに入力）\n\n【作業の目的】\n\n（この文章を何のために使うかを入力）\n\n【重要な方針】\n\n・元の文字起こしに忠実に整えてください。\n・内容や意味を勝手に変えないでください。\n・文字起こしにない事実、意見、結論を追加しないでください。\n・明らかな誤字脱字や変換ミスは、前後の文脈から修正してください。\n・助詞や語尾は、必要最小限で整えてください。\n・言い直しや重複は、意味が変わらない範囲で整理してください。\n・事実、意見、推測、決定事項を混同しないでください。\n・不明な部分は「（不明）」または「（要確認）」としてください。\n\n【構成・見出し】\n\n・用途、読み手、文字起こし内容を踏まえて、最も分かりやすい構成をAIが判断してください。\n・見出しの名称や数は固定しません。\n・情報量に応じて、見出しや段落の数を調整してください。\n・文字起こしにない内容を、見出しや本文として追加しないでください。\n\n【出力】\n\n指定した用途にそのまま使える文章を出力してください。  \n前置きや作業説明は不要です。\n\n【文字起こし】\n\n（ここに文字起こしを貼り付ける）"};
+
+      const draftStorageKey = "realtimeTranscriptionDraft";
+      const autosaveSettingKey = "realtimeTranscriptionAutosave";
+      const favoriteStorageKey = "transcriptionPromptFavorites";
+      const customPromptStorageKey = "transcriptionCustomPrompts";
+      const intervalSettingKey = "transcriptionIntervalMarker";
+      const undoStack = [];
+      const maxUndoSteps = 40;
+      let autosaveTimer = null;
+      let searchMatches = [];
+      let currentSearchIndex = -1;
+      let nextIntervalMarkerSeconds = null;
+      let micStream = null;
+      let micAudioContext = null;
+      let micAnalyser = null;
+      let micAnimationFrame = null;
+      let builtinPromptOptions = [];
+      let promptFavorites = [];
+      let customPrompts = {};
+
+      let recognition = null;
+      let recognitionActive = false;
+      let pendingInterim = "";
+      let sentenceBoundaryTimer = null;
+      let punctuationAssistEnabled = true;
+      let lastAutoPeriodAt = 0;
+      let lastAutoPeriodLength = -1;
+      let pendingAutoPeriodReview = false;
+      const autoPeriodRollbackWindow = 350;
+      let shouldContinue = false;
+      let restartTimer = null;
+      let lastFinalText = "";
+      let lastFinalAt = 0;
+      let startTime = null;
+      let clockTimer = null;
+      let wakeLock = null;
+      let microphoneStartTimer = null;
+
+
+      function safeLocalStorageGet(key, fallback = null){
+        try{
+          const value = localStorage.getItem(key);
+          return value === null ? fallback : value;
+        }catch(error){
+          return fallback;
+        }
+      }
+
+      function safeLocalStorageSet(key, value){
+        try{
+          localStorage.setItem(key,value);
+          return true;
+        }catch(error){
+          showToast("端末内へ保存できませんでした");
+          return false;
+        }
+      }
+
+      function pushUndoState(value = transcript.value){
+        if(undoStack.at(-1) === value) return;
+        undoStack.push(value);
+        if(undoStack.length > maxUndoSteps) undoStack.shift();
+        undoButton.disabled = undoStack.length === 0;
+      }
+
+      function undoLastEdit(){
+        if(!undoStack.length){
+          showToast("元に戻せる操作がありません");
+          return;
+        }
+        const previous = undoStack.pop();
+        transcript.value = previous;
+        updateStats();
+        moveToEnd();
+        undoButton.disabled = undoStack.length === 0;
+        scheduleDraftSave();
+        showToast("直前の操作を元に戻しました");
+      }
+
+      function updateDraftStatus(){
+        const saved = safeLocalStorageGet(draftStorageKey,"");
+        if(!autosaveToggle.checked){
+          draftStatus.textContent = saved ? "保存データがあります" : "保存されていません";
+          return;
+        }
+        draftStatus.textContent = saved ? "この端末に保存済み" : "保存待機中";
+      }
+
+      function saveDraftNow(){
+        if(!autosaveToggle.checked) return;
+        if(safeLocalStorageSet(draftStorageKey,transcript.value)){
+          updateDraftStatus();
+        }
+      }
+
+      function scheduleDraftSave(){
+        clearTimeout(autosaveTimer);
+        if(!autosaveToggle.checked) return;
+        autosaveTimer = setTimeout(saveDraftNow,450);
+      }
+
+      function restoreDraft(){
+        const saved = safeLocalStorageGet(draftStorageKey,"");
+        if(!saved){
+          showToast("復元できる保存データはありません");
+          return;
+        }
+        if(transcript.value && !confirm("現在の文章を一時保存の内容に置き換えますか？")) return;
+        pushUndoState();
+        transcript.value = saved;
+        updateStats();
+        moveToEnd();
+        showToast("保存データを復元しました");
+      }
+
+      function deleteDraft(){
+        if(!safeLocalStorageGet(draftStorageKey,"")){
+          showToast("保存データはありません");
+          return;
+        }
+        if(!confirm("端末内の保存データを削除しますか？")) return;
+        try{localStorage.removeItem(draftStorageKey)}catch(error){}
+        updateDraftStatus();
+        showToast("保存データを削除しました");
+      }
+
+
+      function refreshSearch(){
+        const query = transcriptSearchInput.value;
+        searchMatches = [];
+        currentSearchIndex = -1;
+        if(!query){
+          searchStatus.textContent = "検索語を入力してください";
+          return;
+        }
+        const haystack = transcript.value.toLocaleLowerCase("ja");
+        const needle = query.toLocaleLowerCase("ja");
+        let index = 0;
+        while((index = haystack.indexOf(needle,index)) !== -1){
+          searchMatches.push(index);
+          index += Math.max(needle.length,1);
+        }
+        searchStatus.textContent = searchMatches.length ? `${searchMatches.length}件見つかりました` : "見つかりません";
+      }
+
+      function moveSearch(direction){
+        if(!transcriptSearchInput.value) return refreshSearch();
+        if(!searchMatches.length) refreshSearch();
+        if(!searchMatches.length) return;
+        currentSearchIndex = (currentSearchIndex + direction + searchMatches.length) % searchMatches.length;
+        const start = searchMatches[currentSearchIndex];
+        const end = start + transcriptSearchInput.value.length;
+        transcript.focus();
+        transcript.setSelectionRange(start,end);
+        const lineHeight = parseFloat(getComputedStyle(transcript).lineHeight) || 30;
+        const linesBefore = transcript.value.slice(0,start).split("\n").length - 1;
+        transcript.scrollTop = Math.max(0,linesBefore * lineHeight - transcript.clientHeight / 3);
+        searchStatus.textContent = `${currentSearchIndex + 1} / ${searchMatches.length}件`;
+      }
+
+      function insertElapsedMarker(minutes){
+        const marker = `【経過${minutes}分】`;
+        const current = transcript.value;
+        pushUndoState();
+        transcript.value = current + (current && !current.endsWith("\n") ? "\n" : "") + marker + "\n";
+        updateStats();
+        scheduleDraftSave();
+        moveToEnd();
+        showToast(`${minutes}分の区切りを追加しました`);
+      }
+
+      function updateIntervalMarker(sec){
+        if(!intervalMarkerToggle.checked || !startTime) return;
+        const intervalSeconds = Number(intervalMarkerMinutes.value) * 60;
+        if(nextIntervalMarkerSeconds === null) nextIntervalMarkerSeconds = intervalSeconds;
+        while(sec >= nextIntervalMarkerSeconds){
+          insertElapsedMarker(Math.round(nextIntervalMarkerSeconds / 60));
+          nextIntervalMarkerSeconds += intervalSeconds;
+        }
+      }
+
+      async function startMicLevel(){
+        stopMicLevel();
+        if(!navigator.mediaDevices?.getUserMedia){
+          micLevelText.textContent = "入力レベル表示に未対応";
+          return;
+        }
+        try{
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},
+            video:false
+          });
+          micAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const source = micAudioContext.createMediaStreamSource(micStream);
+          micAnalyser = micAudioContext.createAnalyser();
+          micAnalyser.fftSize = 256;
+          micAnalyser.smoothingTimeConstant = .72;
+          source.connect(micAnalyser);
+          const data = new Uint8Array(micAnalyser.frequencyBinCount);
+
+          const draw = () => {
+            micAnalyser.getByteTimeDomainData(data);
+            let sum = 0;
+            for(const value of data){
+              const normalized = (value - 128) / 128;
+              sum += normalized * normalized;
+            }
+            const rms = Math.sqrt(sum / data.length);
+            const percent = Math.min(100,Math.round(rms * 420));
+            micLevelBar.style.width = `${percent}%`;
+            micLevelText.textContent = percent < 8 ? "小さい" : percent < 35 ? "適正" : percent < 70 ? "大きめ" : "非常に大きい";
+            micAnimationFrame = requestAnimationFrame(draw);
+          };
+          draw();
+        }catch(error){
+          micLevelText.textContent = "レベルを取得できません";
+        }
+      }
+
+      function stopMicLevel(){
+        if(micAnimationFrame) cancelAnimationFrame(micAnimationFrame);
+        micAnimationFrame = null;
+        micStream?.getTracks().forEach(track => track.stop());
+        micStream = null;
+        if(micAudioContext && micAudioContext.state !== "closed") micAudioContext.close().catch(()=>{});
+        micAudioContext = null;
+        micAnalyser = null;
+        micLevelBar.style.width = "0%";
+        micLevelText.textContent = "停止中";
+      }
+
+      function loadPromptEnhancements(){
+        builtinPromptOptions = [...promptSelect.options]
+          .filter(option => option.value)
+          .map(option => ({value:option.value,title:option.textContent,prompt:promptTemplates[option.value]}));
+        try{promptFavorites = JSON.parse(safeLocalStorageGet(favoriteStorageKey,"[]")) || []}catch(error){promptFavorites=[]}
+        try{customPrompts = JSON.parse(safeLocalStorageGet(customPromptStorageKey,"{}")) || {}}catch(error){customPrompts={}}
+        Object.entries(customPrompts).forEach(([key,item]) => promptTemplates[key] = item.body);
+        rebuildPromptSelect();
+        renderCustomPromptList();
+      }
+
+      function rebuildPromptSelect(selected = promptSelect.value){
+        promptSelect.innerHTML = '<option value="">プロンプトを選択</option>';
+        const favoritesGroup = document.createElement("optgroup");
+        favoritesGroup.label = "お気に入り";
+        const standardGroup = document.createElement("optgroup");
+        standardGroup.label = "標準プロンプト";
+        const customGroup = document.createElement("optgroup");
+        customGroup.label = "独自プロンプト";
+
+        builtinPromptOptions.forEach(item => {
+          const option = new Option(item.title,item.value);
+          (promptFavorites.includes(item.value) ? favoritesGroup : standardGroup).append(option);
+        });
+        Object.entries(customPrompts).forEach(([key,item]) => {
+          const option = new Option(item.title,key);
+          (promptFavorites.includes(key) ? favoritesGroup : customGroup).append(option);
+        });
+        if(favoritesGroup.children.length) promptSelect.append(favoritesGroup);
+        if(standardGroup.children.length) promptSelect.append(standardGroup);
+        if(customGroup.children.length) promptSelect.append(customGroup);
+        if([...promptSelect.options].some(option => option.value === selected)) promptSelect.value = selected;
+        updateFavoriteButton();
+      }
+
+      function updateFavoriteButton(){
+        const key = promptSelect.value;
+        const active = key && promptFavorites.includes(key);
+        promptFavoriteButton.textContent = active ? "★" : "☆";
+        promptFavoriteButton.classList.toggle("is-favorite",Boolean(active));
+        promptFavoriteButton.disabled = !key;
+        promptFavoriteButton.title = active ? "お気に入りから外す" : "お気に入りに登録";
+      }
+
+      function togglePromptFavorite(){
+        const key = promptSelect.value;
+        if(!key){
+          showToast("プロンプトを選択してください");
+          return;
+        }
+        if(promptFavorites.includes(key)){
+          promptFavorites = promptFavorites.filter(value => value !== key);
+          showToast("お気に入りから外しました");
+        }else{
+          promptFavorites.push(key);
+          showToast("お気に入りに登録しました");
+        }
+        safeLocalStorageSet(favoriteStorageKey,JSON.stringify(promptFavorites));
+        rebuildPromptSelect(key);
+      }
+
+      function renderCustomPromptList(){
+        customPromptList.innerHTML = "";
+        const entries = Object.entries(customPrompts);
+        if(!entries.length){
+          customPromptList.innerHTML = '<p class="utility-note">登録済みの独自プロンプトはありません。</p>';
+          return;
+        }
+        entries.forEach(([key,item]) => {
+          const row = document.createElement("div");
+          row.className = "custom-prompt-item";
+          const name = document.createElement("span");
+          name.textContent = item.title;
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = "削除";
+          button.addEventListener("click",() => deleteCustomPrompt(key));
+          row.append(name,button);
+          customPromptList.append(row);
+        });
+      }
+
+      function saveCustomPrompt(){
+        const title = customPromptTitle.value.trim();
+        const body = customPromptBody.value.trim();
+        if(!title || !body){
+          showToast("プロンプト名と本文を入力してください");
+          return;
+        }
+        const key = `custom_${Date.now()}`;
+        customPrompts[key] = {title,body};
+        promptTemplates[key] = body;
+        safeLocalStorageSet(customPromptStorageKey,JSON.stringify(customPrompts));
+        customPromptTitle.value = "";
+        customPromptBody.value = "";
+        rebuildPromptSelect(key);
+        renderCustomPromptList();
+        showToast("独自プロンプトを登録しました");
+      }
+
+      function deleteCustomPrompt(key){
+        if(!confirm(`「${customPrompts[key]?.title || "独自プロンプト"}」を削除しますか？`)) return;
+        delete customPrompts[key];
+        delete promptTemplates[key];
+        promptFavorites = promptFavorites.filter(value => value !== key);
+        safeLocalStorageSet(customPromptStorageKey,JSON.stringify(customPrompts));
+        safeLocalStorageSet(favoriteStorageKey,JSON.stringify(promptFavorites));
+        rebuildPromptSelect();
+        renderCustomPromptList();
+        showToast("独自プロンプトを削除しました");
+      }
+
+      function showToast(message){
+        toast.textContent = message;
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 1600);
+      }
+
+      function updateStats(){
+        const value = transcript.value;
+        characterCount.textContent = value.length.toLocaleString("ja-JP");
+        lineCount.textContent = value ? value.split(/\n/).length.toLocaleString("ja-JP") : "0";
+      }
+
+      function showMicNotice(message = "マイクがオフになっています。ブラウザまたは端末の設定で、マイクの使用を許可してください。"){
+        micNotice.textContent = message;
+        micNotice.hidden = false;
+      }
+
+      function hideMicNotice(){
+        micNotice.hidden = true;
+      }
+
+      async function checkMicrophonePermission(){
+        if(!navigator.permissions?.query) return;
+
+        try{
+          const permission = await navigator.permissions.query({name:"microphone"});
+
+          if(permission.state === "denied"){
+            showMicNotice();
+          }else{
+            hideMicNotice();
+          }
+
+          permission.addEventListener("change", () => {
+            if(permission.state === "denied"){
+              showMicNotice();
+            }else{
+              hideMicNotice();
+            }
+          });
+        }catch(error){
+          // Safariなど、microphone権限の事前確認に未対応の環境では開始時に判定する
+        }
+      }
+
+      function setStatus(message, mode="idle"){
+        statusText.textContent = message;
+        statusDot.className = "status-dot";
+        if(mode === "listening") statusDot.classList.add("listening");
+        if(mode === "error") statusDot.classList.add("error");
+      }
+
+      function setRunning(running){
+        startButtons.forEach(button => button.disabled = running);
+        stopButtons.forEach(button => button.disabled = !running);
+      }
+
+      function startClock(){
+        startTime = Date.now();
+        nextIntervalMarkerSeconds = intervalMarkerToggle.checked ? Number(intervalMarkerMinutes.value) * 60 : null;
+        clearInterval(clockTimer);
+        clockTimer = setInterval(() => {
+          const sec = Math.floor((Date.now() - startTime) / 1000);
+          elapsedTime.textContent =
+            String(Math.floor(sec / 60)).padStart(2,"0") + ":" +
+            String(sec % 60).padStart(2,"0");
+          updateIntervalMarker(sec);
+        }, 500);
+      }
+
+      function stopClock(){
+        clearInterval(clockTimer);
+        clockTimer = null;
+      }
+
+      function normalizeText(text){
+        return text.replace(/[ \t]+/g," ").trim();
+      }
+
+      function clearSentenceBoundaryTimer(){
+        clearTimeout(sentenceBoundaryTimer);
+        sentenceBoundaryTimer = null;
+      }
+
+      function endsWithSentencePunctuation(text){
+        return /[。！？!?…]$/.test(text.trim());
+      }
+
+      const punctuationPresets = {
+        fast: {
+          sentenceEnd: 300,
+          neutral: 500,
+          continuation: 1000
+        },
+        standard: {
+          sentenceEnd: 450,
+          neutral: 700,
+          continuation: 1000
+        },
+        slow: {
+          sentenceEnd: 650,
+          neutral: 800,
+          continuation: 1100
+        }
+      };
+
+      let punctuationDelays = {...punctuationPresets.standard};
+
+      function secondsToMilliseconds(value){
+        return Math.round(Number(value) * 1000);
+      }
+
+      function millisecondsToSeconds(value){
+        return (value / 1000).toFixed(2);
+      }
+
+      function updatePunctuationOutputs(){
+        sentenceEndDelayValue.textContent = millisecondsToSeconds(punctuationDelays.sentenceEnd);
+        neutralDelayValue.textContent = millisecondsToSeconds(punctuationDelays.neutral);
+        continuationDelayValue.textContent = millisecondsToSeconds(punctuationDelays.continuation);
+
+        sentenceEndDelayInput.value = millisecondsToSeconds(punctuationDelays.sentenceEnd);
+        neutralDelayInput.value = millisecondsToSeconds(punctuationDelays.neutral);
+        continuationDelayInput.value = millisecondsToSeconds(punctuationDelays.continuation);
+      }
+
+      function updatePunctuationControlsState(){
+        punctuationPreset.disabled = !punctuationAssistEnabled;
+        punctuationDetailsButton.disabled = !punctuationAssistEnabled;
+        punctuationSpeedSetting.classList.toggle("setting-disabled", !punctuationAssistEnabled);
+
+        if(!punctuationAssistEnabled){
+          clearSentenceBoundaryTimer();
+          pendingAutoPeriodReview = false;
+          punctuationDetails.hidden = true;
+          punctuationDetailsButton.setAttribute("aria-expanded","false");
+          punctuationDetailsButton.textContent = "詳細";
+        }
+      }
+
+      function savePunctuationSettings(){
+        try{
+          localStorage.setItem("transcriptionPunctuationSettings", JSON.stringify({
+            enabled: punctuationAssistEnabled,
+            preset: punctuationPreset.value,
+            delays: punctuationDelays
+          }));
+        }catch(error){}
+      }
+
+      function applyPunctuationPreset(preset, save = true){
+        if(preset !== "custom" && punctuationPresets[preset]){
+          punctuationDelays = {...punctuationPresets[preset]};
+        }
+
+        punctuationPreset.value = preset;
+        updatePunctuationOutputs();
+
+        if(save){
+          savePunctuationSettings();
+        }
+      }
+
+      function applyCustomPunctuationSettings(){
+        punctuationDelays = {
+          sentenceEnd: secondsToMilliseconds(sentenceEndDelayInput.value),
+          neutral: secondsToMilliseconds(neutralDelayInput.value),
+          continuation: secondsToMilliseconds(continuationDelayInput.value)
+        };
+
+        punctuationPreset.value = "custom";
+        updatePunctuationOutputs();
+        savePunctuationSettings();
+      }
+
+      function loadPunctuationSettings(){
+        try{
+          const saved = JSON.parse(localStorage.getItem("transcriptionPunctuationSettings") || "null");
+
+          punctuationAssistEnabled = saved?.enabled !== false;
+          punctuationAssistToggle.checked = punctuationAssistEnabled;
+
+          if(saved?.preset === "custom" && saved?.delays){
+            punctuationDelays = {
+              sentenceEnd: Number(saved.delays.sentenceEnd) || punctuationPresets.standard.sentenceEnd,
+              neutral: Number(saved.delays.neutral) || punctuationPresets.standard.neutral,
+              continuation: Number(saved.delays.continuation) || punctuationPresets.standard.continuation
+            };
+            punctuationPreset.value = "custom";
+            updatePunctuationOutputs();
+            updatePunctuationControlsState();
+            return;
+          }
+
+          if(saved?.preset && punctuationPresets[saved.preset]){
+            applyPunctuationPreset(saved.preset, false);
+            updatePunctuationControlsState();
+            return;
+          }
+        }catch(error){}
+
+        punctuationAssistEnabled = true;
+        punctuationAssistToggle.checked = true;
+        applyPunctuationPreset("standard", false);
+        updatePunctuationControlsState();
+      }
+
+      function togglePunctuationDetails(){
+        const willOpen = punctuationDetails.hidden;
+        punctuationDetails.hidden = !willOpen;
+        punctuationDetailsButton.setAttribute("aria-expanded", String(willOpen));
+        punctuationDetailsButton.textContent = willOpen ? "閉じる" : "詳細";
+      }
+
+      function sentenceBoundaryDelay(text){
+        const normalized = text.trim();
+
+        // Typical Japanese sentence-final forms: punctuate sooner.
+        const likelySentenceEnd =
+          /(です|ます|でした|ました|ません|でしょう|である|だった|だ|ない|なかった|たい|ください|できる|できます|できました|ある|あります|ありません|いる|いました|思う|思います|思いました|ですか|ますか|でしょうか|よね|ですね|かな)$/;
+
+        // Particles and connective expressions often indicate that the sentence continues.
+        const likelyContinuation =
+          /(は|が|を|に|へ|で|と|の|も|から|まで|より|ので|のに|けど|けれど|けれども|そして|また|つまり|例えば|たとえば|えっと|あの)$/;
+
+        if(likelySentenceEnd.test(normalized)) return punctuationDelays.sentenceEnd;
+        if(likelyContinuation.test(normalized)) return punctuationDelays.continuation;
+        return punctuationDelays.neutral;
+      }
+
+      function scheduleSentenceBoundary(){
+        clearSentenceBoundaryTimer();
+        if(!punctuationAssistEnabled) return;
+
+        const snapshot = transcript.value.trimEnd();
+        if(!snapshot || endsWithSentencePunctuation(snapshot)) return;
+
+        const delay = sentenceBoundaryDelay(snapshot);
+
+        sentenceBoundaryTimer = setTimeout(() => {
+          if(!punctuationAssistEnabled || !shouldContinue || pendingInterim) return;
+
+          const current = transcript.value.trimEnd();
+          if(!current || current !== snapshot || endsWithSentencePunctuation(current)) return;
+
+          pushUndoState();
+          transcript.value = current + "。";
+          lastAutoPeriodAt = Date.now();
+          lastAutoPeriodLength = transcript.value.length;
+          pendingAutoPeriodReview = false;
+          updateStats();
+          moveToEnd();
+        }, delay);
+      }
+
+      function canRollbackAutoPeriod(){
+        return punctuationAssistEnabled &&
+          transcript.value.length === lastAutoPeriodLength &&
+          transcript.value.endsWith("。");
+      }
+
+      function removeLastAutoPeriod(){
+        if(!canRollbackAutoPeriod()) return false;
+
+        transcript.value = transcript.value.slice(0,-1);
+        lastAutoPeriodAt = 0;
+        lastAutoPeriodLength = -1;
+        pendingAutoPeriodReview = false;
+        updateStats();
+        moveToEnd();
+        return true;
+      }
+
+      function prepareAutoPeriodReview(){
+        if(!canRollbackAutoPeriod()){
+          pendingAutoPeriodReview = false;
+          return;
+        }
+
+        const isImmediateRestart =
+          Date.now() - lastAutoPeriodAt <= autoPeriodRollbackWindow;
+
+        if(isImmediateRestart){
+          removeLastAutoPeriod();
+          return;
+        }
+
+        // 0.2秒を超えた場合は、次に認識された言葉で判断する。
+        pendingAutoPeriodReview = true;
+      }
+
+      function reviewAutoPeriodByNextWords(text){
+        if(!pendingAutoPeriodReview) return;
+
+        const nextWords = normalizeText(text).replace(/^[、。,.\s]+/,"");
+        if(!nextWords) return;
+
+        // 前の文から明らかに続く語だけを対象にする。
+        const likelyContinuationStart =
+          /^(が|けど|けれど|けれども|ので|のに|から|し|て|で|ため|という|とは|なら|ながら|つつ|または|あるいは)/;
+
+        if(likelyContinuationStart.test(nextWords)){
+          removeLastAutoPeriod();
+        }else{
+          pendingAutoPeriodReview = false;
+        }
+      }
+
+      function moveToEnd(){
+        if(!autoScrollToggle.checked) return;
+        transcript.scrollTop = transcript.scrollHeight;
+        transcript.selectionStart = transcript.selectionEnd = transcript.value.length;
+      }
+
+      function appendFinalText(text){
+        const cleaned = normalizeText(text);
+        if(!cleaned) return;
+
+        const now = Date.now();
+        if(cleaned === lastFinalText && now - lastFinalAt < 1800) return;
+
+        lastFinalText = cleaned;
+        lastFinalAt = now;
+        pushUndoState();
+        transcript.value += cleaned;
+
+        updateStats();
+        moveToEnd();
+      }
+
+      function scheduleRecognitionStart(delay = 120){
+        if(!shouldContinue) return;
+
+        clearTimeout(restartTimer);
+        restartTimer = setTimeout(() => {
+          if(!shouldContinue || recognitionActive) return;
+
+          createRecognition();
+
+          try{
+            recognition.start();
+          }catch(error){
+            if(shouldContinue){
+              scheduleRecognitionStart(250);
+            }
+          }
+        }, delay);
+      }
+
+      function createRecognition(){
+        recognition = new SpeechRecognition();
+        recognition.lang = "ja-JP";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+          recognitionActive = true;
+          clearTimeout(microphoneStartTimer);
+          hideMicNotice();
+          setRunning(true);
+          setStatus("認識中","listening");
+          startMicLevel();
+        };
+
+        recognition.onspeechstart = () => {
+          clearSentenceBoundaryTimer();
+          prepareAutoPeriodReview();
+          setStatus("認識中","listening");
+        };
+
+        recognition.onspeechend = () => {
+          if(shouldContinue){
+            setStatus("音声待機中","listening");
+            scheduleSentenceBoundary();
+          }
+        };
+
+        recognition.onresult = event => {
+          clearSentenceBoundaryTimer();
+          let interim = "";
+
+          for(let i = event.resultIndex; i < event.results.length; i++){
+            const previewText = event.results[i][0]?.transcript || "";
+            if(previewText){
+              reviewAutoPeriodByNextWords(previewText);
+              break;
+            }
+          }
+
+          for(let i = event.resultIndex; i < event.results.length; i++){
+            const result = event.results[i];
+            const recognizedText = result[0]?.transcript || "";
+
+            if(result.isFinal){
+              appendFinalText(recognizedText);
+              pendingInterim = "";
+            }else{
+              interim += recognizedText;
+            }
+          }
+
+          pendingInterim = normalizeText(interim);
+          interimText.textContent = pendingInterim;
+
+          if(!pendingInterim && shouldContinue){
+            scheduleSentenceBoundary();
+          }
+        };
+
+        recognition.onerror = event => {
+          clearTimeout(microphoneStartTimer);
+
+          const recoverableErrors = ["no-speech","network","aborted"];
+          if(recoverableErrors.includes(event.error)){
+            if(shouldContinue){
+              setStatus("音声待機中","listening");
+            }
+            return;
+          }
+
+          shouldContinue = false;
+          recognitionActive = false;
+          clearSentenceBoundaryTimer();
+          pendingInterim = "";
+          interimText.textContent = "";
+          setRunning(false);
+          stopClock();
+
+          const messages = {
+            "not-allowed":"マイクの使用を許可してください",
+            "service-not-allowed":"音声認識を利用できません",
+            "audio-capture":"マイクが利用できません"
+          };
+
+          if(event.error === "not-allowed" || event.error === "audio-capture"){
+            showMicNotice();
+          }
+
+          setStatus(messages[event.error] || "音声認識を継続できません","error");
+        };
+
+        recognition.onend = () => {
+          recognitionActive = false;
+
+          if(shouldContinue && pendingInterim){
+            appendFinalText(pendingInterim);
+          }
+
+          pendingInterim = "";
+          interimText.textContent = "";
+
+          if(shouldContinue){
+            setStatus("音声待機中","listening");
+            scheduleRecognitionStart(120);
+          }else{
+            setRunning(false);
+            setStatus("停止中");
+          }
+        };
+      }
+
+      function startRecognition(){
+        if(shouldContinue || recognitionActive) return;
+
+        shouldContinue = true;
+        pendingInterim = "";
+        setStatus("起動中","listening");
+        showMicNotice("マイクの使用を確認しています。許可画面が表示された場合は「許可」を選んでください。");
+        startClock();
+
+        clearTimeout(microphoneStartTimer);
+        microphoneStartTimer = setTimeout(() => {
+          if(statusText.textContent === "起動中"){
+            showMicNotice();
+            setStatus("マイクを確認してください","error");
+          }
+        }, 3000);
+
+        scheduleRecognitionStart(0);
+      }
+
+      function stopRecognition(){
+        shouldContinue = false;
+        recognitionActive = false;
+        pendingAutoPeriodReview = false;
+        pendingInterim = "";
+
+        clearTimeout(microphoneStartTimer);
+        clearTimeout(restartTimer);
+        clearSentenceBoundaryTimer();
+        stopMicLevel();
+        interimText.textContent = "";
+        stopClock();
+
+        try{ recognition?.abort(); }catch(error){}
+
+        setRunning(false);
+        setStatus("停止中");
+      }
+
+      async function copyText(){
+        if(!transcript.value){
+          showToast("コピーする文章がありません");
+          return;
+        }
+
+        try{
+          await navigator.clipboard.writeText(transcript.value);
+          showToast("全文をコピーしました");
+        }catch(error){
+          transcript.select();
+          document.execCommand("copy");
+          transcript.setSelectionRange(transcript.value.length,transcript.value.length);
+          showToast("全文をコピーしました");
+        }
+      }
+
+
+
+      function buildPromptAndTranscript(){
+        const key = promptSelect.value;
+        const selectedPrompt = promptTemplates[key];
+        const body = transcript.value.trim();
+
+        if(!selectedPrompt){
+          showToast("プロンプトを選択してください");
+          promptSelect.focus();
+          return null;
+        }
+
+        if(!body){
+          showToast("保存する文章がありません");
+          transcript.focus();
+          return null;
+        }
+
+        const placeholderPattern = /【文字起こし】\s*[\r\n]+（ここに文字起こしを貼り付ける）(?:\s*---\s*)?$/;
+        const simplePlaceholderPattern = /（ここに文字起こしを貼り付ける）(?:\s*---\s*)?$/;
+        let combined = selectedPrompt.trim();
+
+        if(placeholderPattern.test(combined)){
+          combined = combined.replace(placeholderPattern, `【文字起こし】\n\n${body}`);
+        }else if(simplePlaceholderPattern.test(combined)){
+          combined = combined.replace(simplePlaceholderPattern, body);
+        }else{
+          combined = `${combined}\n\n---\n\n【文字起こし】\n\n${body}`;
+        }
+
+        return combined.trim();
+      }
+
+      async function writeTextToClipboard(value){
+        if(navigator.clipboard?.writeText){
+          try{
+            await navigator.clipboard.writeText(value);
+            return true;
+          }catch(error){}
+        }
+
+        const helper = document.createElement("textarea");
+        helper.value = value;
+        helper.setAttribute("readonly","");
+        helper.style.position = "fixed";
+        helper.style.left = "-9999px";
+        helper.style.top = "0";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        helper.setSelectionRange(0,helper.value.length);
+
+        let copied = false;
+        try{
+          copied = document.execCommand("copy");
+        }catch(error){
+          copied = false;
+        }finally{
+          helper.remove();
+        }
+        return copied;
+      }
+
+      async function copyPromptAndTranscript(){
+        const combined = buildPromptAndTranscript();
+        if(!combined) return;
+
+        const copied = await writeTextToClipboard(combined);
+        if(copied){
+          showToast("プロンプトと文章をコピーしました");
+        }else{
+          showToast("コピーできませんでした。ブラウザのコピー許可を確認してください");
+        }
+      }
+
+      function savePromptAndTranscript(){
+        const combined = buildPromptAndTranscript();
+        if(!combined) return;
+
+        const selectedTitle =
+          promptSelect.options[promptSelect.selectedIndex]?.textContent?.trim() || "プロンプト付き音声入力";
+        const safeTitle = selectedTitle.replace(/[\\/:*?"<>|]/g,"_");
+        const now = new Date();
+        const stamp = [
+          now.getFullYear(),
+          String(now.getMonth() + 1).padStart(2,"0"),
+          String(now.getDate()).padStart(2,"0")
+        ].join("-");
+
+        const blob = new Blob([combined], {type:"text/plain;charset=utf-8"});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = url;
+        link.download = `${stamp}_${safeTitle}.txt`;
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url),1000);
+
+        showToast("プロンプトと文章を保存しました");
+      }
+
+      function saveText(){
+        if(!transcript.value){
+          showToast("保存する文章がありません");
+          return;
+        }
+
+        const now = new Date();
+        const p = value => String(value).padStart(2,"0");
+        const filename = `transcript_${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.txt`;
+        const url = URL.createObjectURL(new Blob([transcript.value],{type:"text/plain;charset=utf-8"}));
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        showToast("テキストを保存しました");
+      }
+
+      function clearText(){
+        if(!transcript.value){
+          showToast("文章がありません");
+          return;
+        }
+
+        if(!confirm("表示中の文章をすべて消しますか？")) return;
+
+        pushUndoState();
+        transcript.value = "";
+        interimText.textContent = "";
+        lastFinalText = "";
+        lastFinalAt = 0;
+        updateStats();
+        transcript.focus();
+      }
+
+      function applyTheme(theme){
+        document.documentElement.dataset.theme = theme;
+        themeButton.textContent = theme === "dark" ? "ライト表示" : "ダーク表示";
+
+        try{
+          localStorage.setItem("transcriptionTheme", theme);
+        }catch(error){}
+      }
+
+      function toggleTheme(){
+        const current = document.documentElement.dataset.theme || "light";
+        applyTheme(current === "dark" ? "light" : "dark");
+      }
+
+      async function toggleWakeLock(){
+        if(!("wakeLock" in navigator)){
+          showToast("この端末では利用できません");
+          return;
+        }
+
+        try{
+          if(wakeLock){
+            await wakeLock.release();
+            wakeLock = null;
+            wakeButton.textContent = "画面スリープ無効化";
+            wakeButton.classList.remove("wake-active");
+            wakeButton.setAttribute("aria-pressed", "false");
+          }else{
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeButton.textContent = "画面スリープ無効";
+            wakeButton.classList.add("wake-active");
+            wakeButton.setAttribute("aria-pressed", "true");
+
+            wakeLock.addEventListener("release", () => {
+              wakeLock = null;
+              wakeButton.textContent = "画面スリープ無効化";
+              wakeButton.classList.remove("wake-active");
+              wakeButton.setAttribute("aria-pressed", "false");
+            });
+          }
+        }catch(error){
+          showToast("画面固定を開始できません");
+        }
+      }
+
+      startButtons.forEach(button => button.addEventListener("click",startRecognition));
+      stopButtons.forEach(button => button.addEventListener("click",stopRecognition));
+      copyButtons.forEach(button => button.addEventListener("click",copyText));
+      downloadButton.addEventListener("click",saveText);
+      mobileSaveButton.addEventListener("click",saveText);
+      promptCopyButton.addEventListener("click",copyPromptAndTranscript);
+      promptSaveButton.addEventListener("click",savePromptAndTranscript);
+      clearButton.addEventListener("click",clearText);
+      themeButton.addEventListener("click",toggleTheme);
+      wakeButton.addEventListener("click",toggleWakeLock);
+      fontSizeSelect.addEventListener("change",() => {
+        transcript.style.fontSize = fontSizeSelect.value + "px";
+      });
+
+      punctuationAssistToggle.addEventListener("change",() => {
+        punctuationAssistEnabled = punctuationAssistToggle.checked;
+        updatePunctuationControlsState();
+        savePunctuationSettings();
+
+        showToast(
+          punctuationAssistEnabled
+            ? "句点補助をONにしました"
+            : "句点補助をOFFにしました"
+        );
+      });
+
+      punctuationPreset.addEventListener("change",() => {
+        const preset = punctuationPreset.value;
+
+        if(preset === "custom"){
+          punctuationDetails.hidden = false;
+          punctuationDetailsButton.setAttribute("aria-expanded","true");
+          punctuationDetailsButton.textContent = "閉じる";
+          savePunctuationSettings();
+          return;
+        }
+
+        applyPunctuationPreset(preset);
+      });
+
+      punctuationDetailsButton.addEventListener("click",togglePunctuationDetails);
+      sentenceEndDelayInput.addEventListener("input",applyCustomPunctuationSettings);
+      neutralDelayInput.addEventListener("input",applyCustomPunctuationSettings);
+      continuationDelayInput.addEventListener("input",applyCustomPunctuationSettings);
+      punctuationResetButton.addEventListener("click",() => {
+        applyPunctuationPreset("standard");
+        showToast("句点の速さを標準に戻しました");
+      });
+
+      let manualInputSnapshot = transcript.value;
+      transcript.addEventListener("beforeinput",() => {
+        manualInputSnapshot = transcript.value;
+      });
+      transcript.addEventListener("input",() => {
+        if(manualInputSnapshot !== transcript.value) pushUndoState(manualInputSnapshot);
+        updateStats();
+      });
+
+      autosaveToggle.addEventListener("change",() => {
+        safeLocalStorageSet(autosaveSettingKey,autosaveToggle.checked ? "1" : "0");
+        updateDraftStatus();
+        if(autosaveToggle.checked) saveDraftNow();
+      });
+      restoreDraftButton.addEventListener("click",restoreDraft);
+      deleteDraftButton.addEventListener("click",deleteDraft);
+      undoButton.addEventListener("click",undoLastEdit);
+transcriptSearchInput.addEventListener("input",refreshSearch);
+      searchPreviousButton.addEventListener("click",() => moveSearch(-1));
+      searchNextButton.addEventListener("click",() => moveSearch(1));
+      transcriptSearchInput.addEventListener("keydown",event => {
+        if(event.key === "Enter"){
+          event.preventDefault();
+          moveSearch(event.shiftKey ? -1 : 1);
+        }
+      });
+      intervalMarkerToggle.addEventListener("change",() => {
+        safeLocalStorageSet(intervalSettingKey,JSON.stringify({
+          enabled:intervalMarkerToggle.checked,
+          minutes:Number(intervalMarkerMinutes.value)
+        }));
+        nextIntervalMarkerSeconds = intervalMarkerToggle.checked && startTime
+          ? Number(intervalMarkerMinutes.value) * 60
+          : null;
+      });
+      intervalMarkerMinutes.addEventListener("change",() => {
+        safeLocalStorageSet(intervalSettingKey,JSON.stringify({
+          enabled:intervalMarkerToggle.checked,
+          minutes:Number(intervalMarkerMinutes.value)
+        }));
+        nextIntervalMarkerSeconds = intervalMarkerToggle.checked && startTime
+          ? Number(intervalMarkerMinutes.value) * 60
+          : null;
+      });
+      promptSelect.addEventListener("change",updateFavoriteButton);
+      promptFavoriteButton.addEventListener("click",togglePromptFavorite);
+      customPromptButton.addEventListener("click",() => customPromptDialog.showModal());
+      saveCustomPromptButton.addEventListener("click",saveCustomPrompt);
+
+
+      autosaveToggle.checked = safeLocalStorageGet(autosaveSettingKey,"1") !== "0";
+      updateDraftStatus();
+
+      try{
+        const intervalSaved = JSON.parse(safeLocalStorageGet(intervalSettingKey,"null"));
+        if(intervalSaved){
+          intervalMarkerToggle.checked = Boolean(intervalSaved.enabled);
+          if([5,10,15,30].includes(Number(intervalSaved.minutes))){
+            intervalMarkerMinutes.value = String(intervalSaved.minutes);
+          }
+        }
+      }catch(error){}
+
+      loadPromptEnhancements();
+
+      const existingDraft = safeLocalStorageGet(draftStorageKey,"");
+      if(existingDraft && !transcript.value){
+        draftStatus.textContent = autosaveToggle.checked
+          ? "前回の保存データがあります"
+          : "保存データがあります";
+      }
+
+      checkMicrophonePermission();
+
+      try{
+        applyTheme(localStorage.getItem("transcriptionTheme") || "light");
+      }catch(error){
+        applyTheme("light");
+      }
+
+      loadPunctuationSettings();
+
+      window.addEventListener("beforeunload",() => {
+        if(autosaveToggle.checked) saveDraftNow();
+        stopMicLevel();
+      });
+
+      if(!SpeechRecognition){
+        startButtons.forEach(button => button.disabled = true);
+        setStatus("ブラウザ非対応","error");
+      }else{
+        createRecognition();
+      }
+
+      updateStats();
+    })();
+  </script>
+</body>
+</html>
