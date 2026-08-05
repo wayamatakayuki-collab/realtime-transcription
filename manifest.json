@@ -1,0 +1,18 @@
+{
+  "name": "Voice Note for AI",
+  "short_name": "Voice Note",
+  "description": "AIへ橋渡しするためのリアルタイム音声入力アプリ",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "./Voice_Note_for_AI_icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
